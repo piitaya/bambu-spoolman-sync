@@ -8,7 +8,6 @@ import {
 } from "./config.js";
 import { matchSlot } from "./matcher.js";
 import { listRuntimes } from "./mqtt.js";
-import { buildFixturePrinter } from "./fixtures.js";
 import type { AppContext } from "./server.js";
 
 // Turn a Zod validation failure into a single human-readable string so
@@ -152,10 +151,6 @@ export async function registerRoutes(
         slots
       };
     });
-
-    if (process.env.FIXTURES === "1") {
-      printers.push(buildFixturePrinter());
-    }
 
     return {
       printers,
