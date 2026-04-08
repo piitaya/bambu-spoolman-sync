@@ -18,6 +18,36 @@ export interface Config {
   mapping: {
     refresh_interval_hours: number;
   };
+  spoolman: {
+    url?: string;
+    auto_sync: boolean;
+  };
+}
+
+export interface SyncOutcome {
+  printer_serial: string;
+  ams_id: number;
+  slot_id: number;
+  spool_id: number;
+  used_weight: number;
+  created_filament: boolean;
+  created_spool: boolean;
+}
+
+export interface SyncAllResult {
+  synced: SyncOutcome[];
+  skipped: Array<{
+    printer_serial: string;
+    ams_id: number;
+    slot_id: number;
+    reason: string;
+  }>;
+  errors: Array<{
+    printer_serial: string;
+    ams_id: number;
+    slot_id: number;
+    error: string;
+  }>;
 }
 
 export interface AMSSlotData {
@@ -145,5 +175,16 @@ export const api = {
     }),
   getState: () => req<AppState>("/api/state"),
   refreshMapping: () =>
-    req<{ count: number }>("/api/mapping/refresh", { method: "POST" })
+    req<{ count: number }>("/api/mapping/refresh", { method: "POST" }),
+  testSpoolman: () =>
+    req<{ ok: true; info: { version?: string } }>("/api/spoolman/test", {
+      method: "POST"
+    }),
+  syncAllSpoolman: () =>
+    req<SyncAllResult>("/api/spoolman/sync", { method: "POST" }),
+  syncSlotSpoolman: (serial: string, amsId: number, slotId: number) =>
+    req<SyncOutcome>(
+      `/api/spoolman/sync/${encodeURIComponent(serial)}/${amsId}/${slotId}`,
+      { method: "POST" }
+    )
 };

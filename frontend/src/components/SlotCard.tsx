@@ -8,10 +8,11 @@ import {
   Text
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconInfoCircle } from "@tabler/icons-react";
+import { IconInfoCircle, IconRefresh } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { SlotDetailModal } from "./SlotDetailModal";
 import { useMatchStatus } from "./matchStatus";
+import { useConfig, useSyncSlotSpoolman } from "../hooks";
 import type { MatchedSlot } from "../api";
 
 /**
@@ -115,6 +116,12 @@ export function SlotCard({ s }: { s: MatchedSlot }) {
   const { t } = useTranslation();
   const matchStatus = useMatchStatus();
   const status = matchStatus[s.type];
+  const { data: configData } = useConfig();
+  const syncSlot = useSyncSlotSpoolman();
+  const canSync =
+    s.type === "matched" &&
+    Boolean(configData?.config.spoolman?.url) &&
+    !configData?.config.spoolman?.auto_sync;
 
   // When we have a mapped color name, promote it to the headline and
   // push the material to the secondary line. Otherwise fall back to
@@ -141,6 +148,24 @@ export function SlotCard({ s }: { s: MatchedSlot }) {
             <Badge color={status.color} variant="light">
               {status.label}
             </Badge>
+            {canSync && (
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                loading={syncSlot.isPending}
+                onClick={() =>
+                  syncSlot.mutate({
+                    serial: s.slot.printer_serial,
+                    amsId: s.slot.ams_id,
+                    slotId: s.slot.slot_id
+                  })
+                }
+                aria-label={t("slot.sync_aria_label")}
+              >
+                <IconRefresh size={16} />
+              </ActionIcon>
+            )}
             <ActionIcon
               variant="subtle"
               color="gray"

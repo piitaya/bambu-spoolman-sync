@@ -6,6 +6,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   IconDashboard,
   IconPrinter,
+  IconRefresh,
   IconSettings
 } from "@tabler/icons-react";
 
@@ -22,6 +23,7 @@ export default function Layout() {
   const links = [
     { to: "/", label: t("nav.dashboard"), icon: IconDashboard },
     { to: "/printers", label: t("nav.printers"), icon: IconPrinter },
+    { to: "/sync", label: t("nav.sync"), icon: IconRefresh },
     { to: "/settings", label: t("nav.settings"), icon: IconSettings }
   ];
 

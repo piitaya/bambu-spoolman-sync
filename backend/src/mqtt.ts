@@ -65,6 +65,7 @@ export interface PrinterRuntime {
 }
 
 export type OnStatus = (printer: Printer, status: PrinterStatus) => void;
+export type OnSlots = (printer: Printer, slots: AMSSlot[]) => void;
 
 /**
  * Decode the nozzle (extruder) assignment from an AMS `info` hex string.
@@ -129,7 +130,11 @@ interface InternalClient {
   disconnect(): Promise<void>;
 }
 
-function connect(printer: Printer, onStatus?: OnStatus): InternalClient {
+function connect(
+  printer: Printer,
+  onStatus?: OnStatus,
+  onSlots?: OnSlots
+): InternalClient {
   const status: PrinterStatus = {
     lastError: null,
     errorCode: null
@@ -217,6 +222,7 @@ function connect(printer: Printer, onStatus?: OnStatus): InternalClient {
     clearWatchdog();
     status.errorCode = null;
     status.lastError = null;
+    onSlots?.(printer, state.slots);
   });
 
   return {
@@ -262,7 +268,8 @@ export function createMqttState(): MqttState {
 export function syncPrinters(
   target: Printer[],
   state: MqttState,
-  onStatus?: OnStatus
+  onStatus?: OnStatus,
+  onSlots?: OnSlots
 ): void {
   const wanted = new Map(
     target.filter((p) => p.enabled).map((p) => [p.serial, p])
@@ -286,7 +293,7 @@ export function syncPrinters(
 
   for (const printer of wanted.values()) {
     if (state.has(printer.serial)) continue;
-    state.set(printer.serial, connect(printer, onStatus));
+    state.set(printer.serial, connect(printer, onStatus, onSlots));
   }
 }
 

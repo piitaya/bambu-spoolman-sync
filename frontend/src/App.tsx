@@ -3,6 +3,7 @@ import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Printers from "./pages/Printers";
 import Settings from "./pages/Settings";
+import Sync from "./pages/Sync";
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="printers" element={<Printers />} />
+          <Route path="sync" element={<Sync />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

@@ -20,6 +20,12 @@ export const ConfigSchema = z.object({
     .object({
       refresh_interval_hours: z.number().int().positive().default(24)
     })
+    .default({}),
+  spoolman: z
+    .object({
+      url: z.string().url().optional(),
+      auto_sync: z.boolean().default(false)
+    })
     .default({})
 });
 export type Config = z.infer<typeof ConfigSchema>;

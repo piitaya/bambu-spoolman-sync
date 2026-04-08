@@ -8,6 +8,11 @@ import {
 } from "./config.js";
 import { matchSlot } from "./matcher.js";
 import { listRuntimes } from "./mqtt.js";
+import {
+  createSpoolmanClient,
+  syncAll,
+  syncSlot
+} from "./spoolman.js";
 import type { AppContext } from "./server.js";
 
 // Turn a Zod validation failure into a single human-readable string so
@@ -133,6 +138,48 @@ export async function registerRoutes(
       return { error: err instanceof Error ? err.message : String(err) };
     }
   });
+
+  app.post("/api/spoolman/test", async (_req, reply) => {
+    const url = ctx.config.spoolman?.url;
+    if (!url) {
+      reply.code(400);
+      return { error: "Spoolman URL is not configured." };
+    }
+    try {
+      const info = await createSpoolmanClient(url).getInfo();
+      return { ok: true, info };
+    } catch (err) {
+      reply.code(502);
+      return { error: err instanceof Error ? err.message : String(err) };
+    }
+  });
+
+  app.post("/api/spoolman/sync", async (_req, reply) => {
+    try {
+      return await syncAll(ctx);
+    } catch (err) {
+      reply.code(400);
+      return { error: err instanceof Error ? err.message : String(err) };
+    }
+  });
+
+  app.post<{ Params: { serial: string; amsId: string; slotId: string } }>(
+    "/api/spoolman/sync/:serial/:amsId/:slotId",
+    async (req, reply) => {
+      const amsId = Number(req.params.amsId);
+      const slotId = Number(req.params.slotId);
+      if (!Number.isFinite(amsId) || !Number.isFinite(slotId)) {
+        reply.code(400);
+        return { error: "Invalid amsId or slotId." };
+      }
+      try {
+        return await syncSlot(ctx, req.params.serial, amsId, slotId);
+      } catch (err) {
+        reply.code(400);
+        return { error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+  );
 
   app.get("/api/state", async () => {
     const runtimes = listRuntimes(ctx.mqttState);

@@ -2,6 +2,7 @@
   "nav": {
     "dashboard": "Tableau de bord",
     "printers": "Imprimantes",
+    "sync": "Synchronisation",
     "settings": "Paramètres",
     "toggle_navigation": "Afficher le menu"
   },
@@ -18,6 +19,8 @@
   },
   "dashboard": {
     "title": "Tableau de bord",
+    "sync_all": "Tout synchroniser avec Spoolman",
+    "auto_sync_on": "Auto-sync activée",
     "help_aria_label": "Que signifient les statuts des slots ?",
     "failed_to_load": "Impossible de charger l'état",
     "no_printers_title": "Aucune imprimante configurée",
@@ -50,6 +53,7 @@
     "no_spool_loaded": "Aucune bobine chargée",
     "remaining": "Restant : {{value}}%",
     "details_aria_label": "Détails du slot",
+    "sync_aria_label": "Synchroniser ce slot avec Spoolman",
     "fields": {
       "color": "Couleur",
       "material": "Matériau",
@@ -129,6 +133,32 @@
     "language_card": {
       "title": "Langue",
       "label": "Langue d'affichage"
+    }
+  },
+  "sync": {
+    "title": "Synchronisation",
+    "connection_card": {
+      "title": "Connexion Spoolman",
+      "hint": "Renseignez l'URL de votre instance Spoolman pour activer la synchronisation des slots AMS correspondants.",
+      "url": "URL Spoolman",
+      "auto_sync": "Synchronisation automatique sur changement AMS",
+      "auto_sync_hint": "Quand un slot correspondant change, il est envoyé automatiquement à Spoolman.",
+      "test": "Tester la connexion",
+      "test_ok": "Connecté à Spoolman {{version}}"
+    },
+    "actions_card": {
+      "title": "Actions",
+      "hint": "Envoyer tous les slots AMS correspondants de toutes les imprimantes à Spoolman.",
+      "sync_all": "Tout synchroniser"
+    }
+  },
+  "spoolman": {
+    "sync_slot": {
+      "done": "Slot synchronisé avec Spoolman"
+    },
+    "sync_all": {
+      "done": "{{synced}} slots synchronisés ({{skipped}} ignorés)",
+      "partial": "{{synced}} slots synchronisés avec {{errors}} erreurs"
     }
   },
   "errors": {

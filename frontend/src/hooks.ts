@@ -160,3 +160,71 @@ export const useRefreshMapping = () => {
     onError: toast.error
   });
 };
+
+export const useTestSpoolman = () => {
+  const { t } = useTranslation();
+  const toast = useToasts();
+  return useMutation({
+    mutationFn: () => api.testSpoolman(),
+    onSuccess: ({ info }) => {
+      toast.success(
+        t("sync.connection_card.test_ok", {
+          version: info.version ?? "?"
+        })
+      );
+    },
+    onError: toast.error
+  });
+};
+
+export const useSyncAllSpoolman = () => {
+  const qc = useQueryClient();
+  const { t } = useTranslation();
+  const toast = useToasts();
+  return useMutation({
+    mutationFn: () => api.syncAllSpoolman(),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: STATE_KEY });
+      if (result.errors.length > 0) {
+        toast.error(
+          new Error(
+            t("spoolman.sync_all.partial", {
+              synced: result.synced.length,
+              errors: result.errors.length
+            })
+          )
+        );
+        return;
+      }
+      toast.success(
+        t("spoolman.sync_all.done", {
+          synced: result.synced.length,
+          skipped: result.skipped.length
+        })
+      );
+    },
+    onError: toast.error
+  });
+};
+
+export const useSyncSlotSpoolman = () => {
+  const qc = useQueryClient();
+  const { t } = useTranslation();
+  const toast = useToasts();
+  return useMutation({
+    mutationFn: ({
+      serial,
+      amsId,
+      slotId
+    }: {
+      serial: string;
+      amsId: number;
+      slotId: number;
+    }) => api.syncSlotSpoolman(serial, amsId, slotId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: STATE_KEY });
+      toast.success(t("spoolman.sync_slot.done"));
+    },
+    onError: toast.error
+  });
+};

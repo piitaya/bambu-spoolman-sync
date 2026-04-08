@@ -4,10 +4,9 @@ View your Bambu Lab AMS slots and match them against a community-maintained
 Spoolman mapping — with deterministic RFID variant matching, not fuzzy string
 transforms.
 
-> **Status — Step 1.** Multi-printer viewer with deterministic variant
-> matching. **Writing to Spoolman is not implemented yet** — the UI shows
-> which slots _could_ be synced, but nothing is pushed anywhere. See the
-> [roadmap](#roadmap) for what's next.
+> **Status — Step 2.** Multi-printer viewer with deterministic variant
+> matching **and Spoolman write-back**: matched slots can be pushed to
+> your Spoolman instance on demand or automatically on every AMS update.
 
 ## Why
 
@@ -22,15 +21,21 @@ it isn't.
 
 ## What it does today
 
-Connects to one or more Bambu Lab printers over local MQTT and shows
-every AMS slot side by side, labeled with whether the loaded spool can be
-matched to a Spoolman equivalent. That's it — a read-only dashboard that
-answers the question "which of my spools are ready to sync?".
+- Connects to one or more Bambu Lab printers over local MQTT and shows
+  every AMS slot side by side, labeled with whether the loaded spool
+  can be matched to a Spoolman equivalent.
+- Syncs matched slots to your Spoolman instance: finds or creates the
+  filament (auto-importing from SpoolmanDB when missing), finds or
+  creates the spool identified by the physical RFID UID stored in
+  `extra.tag`, and updates its `used_weight` from the AMS `remain %`.
+- Triggers can be manual (**Sync all** button on the dashboard, or a
+  per-slot sync icon) or automatic on every AMS update, toggled in
+  **Settings → Spoolman**.
 
 ## What it does NOT do yet
 
-- Push anything to Spoolman (no `POST /spool`, no weight updates).
-- Track filament usage over time.
+- Sync unmapped / unknown / third-party slots (only `matched` for now).
+- Track filament usage over time beyond the latest weight snapshot.
 - Contribute unmapped variants back to the community mapping.
 
 ## Running it
@@ -65,6 +70,9 @@ Everything is UI-driven. Add your first printer from the **Printers** page
   **Settings → Network → LAN-only mode**.
 - Tweak the mapping **refresh interval** under
   **Settings → Filament mapping**.
+- Point the app at your Spoolman instance under **Settings → Spoolman**
+  (URL, plus an optional **auto-sync** switch). Use **Test connection**
+  to verify the URL before saving.
 
 Everything is persisted to `config.json` under `DATA_DIR`; the cached
 filament mapping lives next to it as `filaments.json`.
@@ -88,7 +96,6 @@ filament mapping lives next to it as `filaments.json`.
 
 ## Roadmap
 
-- **Step 2** — Spoolman client: find / create spools, write remaining weight.
 - **Step 3** — Opt-in unmapped variant reporting back to `bambu-spoolman-db`.
 - **Step 4** — Dockerfile + compose example.
 

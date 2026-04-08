@@ -1,13 +1,24 @@
-import { ActionIcon, Alert, Group, Loader, Stack, Title } from "@mantine/core";
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Group,
+  Loader,
+  Stack,
+  Title
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconHelp } from "@tabler/icons-react";
+import { IconHelp, IconRefresh, IconRefreshDot } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { PrinterBlock } from "../components/PrinterBlock";
 import { StatusLegend } from "../components/StatusLegend";
-import { useAppState } from "../hooks";
+import { useAppState, useConfig, useSyncAllSpoolman } from "../hooks";
 
 export default function DashboardPage() {
   const { data, isLoading, isError, error } = useAppState();
+  const { data: configData } = useConfig();
+  const syncAll = useSyncAllSpoolman();
   const { t } = useTranslation();
   const [legendOpened, { open: openLegend, close: closeLegend }] =
     useDisclosure(false);
@@ -23,18 +34,44 @@ export default function DashboardPage() {
 
   const printers = (data?.printers ?? []).filter((p) => p.enabled);
 
+  const spoolmanConfigured = Boolean(configData?.config.spoolman?.url);
+  const autoSync = Boolean(configData?.config.spoolman?.auto_sync);
+  const showSyncAll = spoolmanConfigured && !autoSync;
+
   return (
     <Stack gap="xl">
-      <Group gap="xs">
-        <Title order={2}>{t("dashboard.title")}</Title>
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          onClick={openLegend}
-          aria-label={t("dashboard.help_aria_label")}
-        >
-          <IconHelp size={20} />
-        </ActionIcon>
+      <Group justify="space-between" wrap="nowrap">
+        <Group gap="xs">
+          <Title order={2}>{t("dashboard.title")}</Title>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            onClick={openLegend}
+            aria-label={t("dashboard.help_aria_label")}
+          >
+            <IconHelp size={20} />
+          </ActionIcon>
+        </Group>
+        {showSyncAll && (
+          <Button
+            leftSection={<IconRefresh size={16} />}
+            variant="default"
+            loading={syncAll.isPending}
+            onClick={() => syncAll.mutate()}
+          >
+            {t("dashboard.sync_all")}
+          </Button>
+        )}
+        {spoolmanConfigured && autoSync && (
+          <Badge
+            color="teal"
+            variant="light"
+            size="lg"
+            leftSection={<IconRefreshDot size={14} />}
+          >
+            {t("dashboard.auto_sync_on")}
+          </Badge>
+        )}
       </Group>
 
       {printers.length === 0 && (

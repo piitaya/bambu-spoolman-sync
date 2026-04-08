@@ -12,6 +12,7 @@ import {
   syncPrinters,
   type MqttState,
 } from "./mqtt.js";
+import { evaluateSlotForSync, syncSlot } from "./spoolman.js";
 
 const MAPPING_SOURCE_URL =
   "https://raw.githubusercontent.com/piitaya/bambu-spoolman-db/main/filaments.json";
@@ -38,6 +39,15 @@ export async function buildApp() {
 
   const mqttState = createMqttState();
 
+  // Per-slot auto-sync bookkeeping. We track the last-synced tray_uuid
+  // and remain% so we only hit Spoolman when something actually changed,
+  // and debounce by ~2s because the AMS pushes frequent reports while
+  // the printer is busy.
+  const lastSyncKey = new Map<string, string>();
+  const debounceTimers = new Map<string, NodeJS.Timeout>();
+  const slotKey = (serial: string, amsId: number, slotId: number) =>
+    `${serial}#${amsId}#${slotId}`;
+
   const ctx: AppContext = {
     config,
     configFilePath,
@@ -45,11 +55,50 @@ export async function buildApp() {
     mqttState,
     syncFromConfig() {
       mapping.setInterval(ctx.config.mapping.refresh_interval_hours);
-      syncPrinters(ctx.config.printers, mqttState, (printer, status) =>
-        app.log.info(
-          { serial: printer.serial, name: printer.name, status },
-          "printer status",
-        ),
+      syncPrinters(
+        ctx.config.printers,
+        mqttState,
+        (printer, status) =>
+          app.log.info(
+            { serial: printer.serial, name: printer.name, status },
+            "printer status",
+          ),
+        (printer, slots) => {
+          if (!ctx.config.spoolman?.auto_sync || !ctx.config.spoolman?.url) {
+            return;
+          }
+          for (const slot of slots) {
+            const evaluated = evaluateSlotForSync(slot, ctx.mapping.byId);
+            if (!evaluated.ok) continue;
+            const key = slotKey(printer.serial, slot.ams_id, slot.slot_id);
+            const signature = `${slot.tray_uuid}|${slot.remain}`;
+            if (lastSyncKey.get(key) === signature) continue;
+            const existing = debounceTimers.get(key);
+            if (existing) clearTimeout(existing);
+            debounceTimers.set(
+              key,
+              setTimeout(() => {
+                debounceTimers.delete(key);
+                lastSyncKey.set(key, signature);
+                syncSlot(ctx, printer.serial, slot.ams_id, slot.slot_id).catch(
+                  (err) => {
+                    // Clear the memo on failure so the next push retries.
+                    lastSyncKey.delete(key);
+                    app.log.warn(
+                      {
+                        err,
+                        serial: printer.serial,
+                        ams: slot.ams_id,
+                        slot: slot.slot_id,
+                      },
+                      "auto-sync failed",
+                    );
+                  },
+                );
+              }, 2000),
+            );
+          }
+        },
       );
     },
   };

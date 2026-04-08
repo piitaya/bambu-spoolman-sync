@@ -2,6 +2,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "printers": "Printers",
+    "sync": "Sync",
     "settings": "Settings",
     "toggle_navigation": "Toggle navigation"
   },
@@ -18,6 +19,8 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "sync_all": "Sync all to Spoolman",
+    "auto_sync_on": "Auto-sync on",
     "help_aria_label": "What do the slot statuses mean?",
     "failed_to_load": "Failed to load state",
     "no_printers_title": "No printers configured",
@@ -50,6 +53,7 @@
     "no_spool_loaded": "No spool loaded",
     "remaining": "Remaining: {{value}}%",
     "details_aria_label": "Slot details",
+    "sync_aria_label": "Sync this slot to Spoolman",
     "fields": {
       "color": "Color",
       "material": "Material",
@@ -129,6 +133,32 @@
     "language_card": {
       "title": "Language",
       "label": "Display language"
+    }
+  },
+  "sync": {
+    "title": "Sync",
+    "connection_card": {
+      "title": "Spoolman connection",
+      "hint": "Point this at your Spoolman instance to enable syncing matched AMS slots as spools.",
+      "url": "Spoolman URL",
+      "auto_sync": "Auto-sync on AMS updates",
+      "auto_sync_hint": "When a matched slot changes, push it to Spoolman automatically.",
+      "test": "Test connection",
+      "test_ok": "Connected to Spoolman {{version}}"
+    },
+    "actions_card": {
+      "title": "Actions",
+      "hint": "Push every matched AMS slot across all printers to Spoolman.",
+      "sync_all": "Sync all now"
+    }
+  },
+  "spoolman": {
+    "sync_slot": {
+      "done": "Slot synced to Spoolman"
+    },
+    "sync_all": {
+      "done": "Synced {{synced}} slots ({{skipped}} skipped)",
+      "partial": "Synced {{synced}} slots with {{errors}} errors"
     }
   },
   "errors": {

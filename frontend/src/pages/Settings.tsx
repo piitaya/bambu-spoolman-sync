@@ -11,7 +11,12 @@ import {
 import { useForm } from "@mantine/form";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useAppState, useConfig, usePutConfig, useRefreshMapping } from "../hooks";
+import {
+  useAppState,
+  useConfig,
+  usePutConfig,
+  useRefreshMapping
+} from "../hooks";
 import { LANGUAGES, persistLanguage, type Language } from "../i18n";
 
 interface FormValues {
