@@ -40,6 +40,22 @@ it isn't.
 
 ## Running it
 
+### Docker (recommended)
+
+```bash
+docker run -d --name bambu-spoolman-sync \
+  -p 4000:4000 \
+  -v $(pwd)/data:/data \
+  ghcr.io/piitaya/bambu-spoolman-sync:latest
+```
+
+Or with Compose — copy [docker-compose.example.yml](docker-compose.example.yml)
+to `docker-compose.yml` and run `docker compose up -d`. Images are published
+to GHCR for `linux/amd64` and `linux/arm64` on every push to `main` and
+tagged release.
+
+### From source
+
 Requirements: **Node.js 20+**.
 
 ```bash
@@ -97,7 +113,6 @@ filament mapping lives next to it as `filaments.json`.
 ## Roadmap
 
 - **Step 3** — Opt-in unmapped variant reporting back to `bambu-spoolman-db`.
-- **Step 4** — Dockerfile + compose example.
 
 ## License
 
