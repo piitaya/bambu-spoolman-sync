@@ -1,46 +1,53 @@
 # Bambu Spoolman Sync
 
-View your Bambu Lab AMS slots and match them against a community-maintained
-Spoolman mapping — with deterministic RFID variant matching, not fuzzy string
-transforms.
+Keep your [Spoolman](https://github.com/Donkie/Spoolman) inventory in
+sync with the spools loaded in your Bambu Lab AMS. Uses the RFID chip
+on each spool, so matches are exact.
 
-> **Status — Step 2.** Multi-printer viewer with deterministic variant
-> matching **and Spoolman write-back**: matched slots can be pushed to
-> your Spoolman instance on demand or automatically on every AMS update.
+> ⚠️ **Preview.** Under active development, no stable release yet.
+> Expect breaking changes and bugs. Use at your own risk.
 
-## Why
+## What it does
 
-Matching Bambu spools by transforming material names and comparing hex
-colors is fragile: it silently breaks on product renames and on any
-wrong-hex entry in SpoolmanDB. This project matches **only** on
-`tray_id_name` — the unique RFID variant id stamped on every genuine
-Bambu spool — against a curated mapping in
+* Watches your AMS over the local network and shows every slot in a
+  simple dashboard: color, material, remaining weight, and which
+  Spoolman spool it maps to.
+* Pushes the current state to Spoolman on demand, or automatically
+  every time something changes in the AMS.
+* Creates missing filaments and vendors in Spoolman the first time it
+  sees a new Bambu variant, so you don't have to set them up by hand.
+* Tracks each physical spool by its RFID chip (not its name or color),
+  so the same roll is always recognized even if you move it between
+  printers.
+
+## Why it's different
+
+Most Bambu→Spoolman tools guess matches by transforming material names
+and comparing hex colors. That breaks when Bambu renames a product or
+ships a slightly different color.
+
+This app uses the **RFID variant id** stamped on every genuine Bambu
+spool, looked up in a community list at
 [`piitaya/bambu-spoolman-db`](https://github.com/piitaya/bambu-spoolman-db).
-Either a slot is a deterministic match, or the UI tells you exactly why
-it isn't.
+A spool either has an exact match (sync it) or it doesn't (the app
+tells you why).
 
-## What it does today
+## Slot status at a glance
 
-- Connects to one or more Bambu Lab printers over local MQTT and shows
-  every AMS slot side by side, labeled with whether the loaded spool
-  can be matched to a Spoolman equivalent.
-- Syncs matched slots to your Spoolman instance: finds or creates the
-  filament (auto-importing from SpoolmanDB when missing), finds or
-  creates the spool identified by the physical RFID UID stored in
-  `extra.tag`, and updates its `used_weight` from the AMS `remain %`.
-- Triggers can be manual (**Sync all** button on the dashboard, or a
-  per-slot sync icon) or automatic on every AMS update, toggled in
-  **Settings → Spoolman**.
+| Badge       | Meaning                                                |
+| ----------- | ------------------------------------------------------ |
+| Mapped      | Recognized Bambu spool, ready to sync with Spoolman    |
+| Unmapped    | Recognized Bambu spool but no Spoolman match yet       |
+| Unknown     | Looks like a Bambu spool we've never seen              |
+| Third party | Non-Bambu spool, or a spool without an RFID tag        |
+| Empty       | Slot has no filament loaded                            |
 
-## What it does NOT do yet
+Only **Mapped** slots sync today. Everything else is shown with an
+explanation so you know what's blocking.
 
-- Sync unmapped / unknown / third-party slots (only `matched` for now).
-- Track filament usage over time beyond the latest weight snapshot.
-- Contribute unmapped variants back to the community mapping.
+## Getting started
 
-## Running it
-
-### Docker (recommended)
+### With Docker (easiest)
 
 ```bash
 docker run -d --name bambu-spoolman-sync \
@@ -49,24 +56,83 @@ docker run -d --name bambu-spoolman-sync \
   ghcr.io/piitaya/bambu-spoolman-sync:latest
 ```
 
-Or with Compose — copy [docker-compose.example.yml](docker-compose.example.yml)
-to `docker-compose.yml` and run `docker compose up -d`. Images are published
-to GHCR for `linux/amd64` and `linux/arm64` on every push to `main` and
-tagged release.
+Open [http://localhost:4000](http://localhost:4000) and follow the UI.
+
+A [docker-compose.example.yml](docker-compose.example.yml) is
+included. Copy it to `docker-compose.yml` and run
+`docker compose up -d`.
 
 ### From source
 
-Requirements: **Node.js 20+**.
+Requires Node.js 20+.
 
 ```bash
-npm install      # install dependencies
-npm run dev      # dev mode with hot reload
-npm test         # run tests
-
-# production build + run (single process on :4000)
-npm run build
-npm start
+npm install
+npm run dev       # dev mode with hot reload
 ```
+
+For production: `npm run build && npm start`.
+
+## First-time setup
+
+1. Add your printer on the Printers page. You'll need its name, IP
+   address, serial number, and access code. The serial and access code
+   are on the printer's touchscreen under *Settings → Device* and
+   *Settings → Network → LAN-only mode*.
+2. On the Sync page, enter your Spoolman URL (e.g.
+   `http://spoolman.local:7912`) and save. A green indicator confirms
+   the connection.
+3. Optionally turn on auto-sync so the app pushes changes as soon as
+   the AMS reports them. Otherwise use the *Sync all* button.
+4. Optionally turn on "archive on empty" to have Spoolman archive a
+   spool when it hits 0%.
+
+## Privacy
+
+* Outbound connections: your printers (local network), your Spoolman
+  instance, and GitHub (to refresh the spool list). Nothing else
+  phones home.
+* No analytics, no telemetry, no accounts.
+* Access codes stay in `config.json` on your machine.
+
+## Roadmap
+
+* Improve onboarding (guided first-run, clearer error messages,
+  better defaults).
+* Sync unrecognized spools too, by creating a Spoolman filament from
+  the AMS info as a fallback.
+* Opt-in reporting of unrecognized spools back to `bambu-spoolman-db`.
+
+## Under the hood
+
+For the curious:
+
+* **Backend**: Fastify + TypeScript. Talks MQTT directly to each
+  printer on `mqtts://{host}:8883`, subscribes to
+  `device/{serial}/report`, and parses slot state from
+  `payload.print.ams.ams[].tray[]`. Keeps `tray_id_name` (RFID variant
+  SKU), `tray_uuid` (per-roll UID), `cols` (colors), `tray_weight`,
+  and `remain %`.
+* **Matching** is deterministic. Each slot's `tray_id_name` is looked
+  up in the cached
+  [`bambu-spoolman-db`](https://github.com/piitaya/bambu-spoolman-db)
+  mapping, which carries the corresponding Spoolman filament id when
+  one is known. No fuzzy matching, no hex comparisons.
+* **Syncing** is a chain of Spoolman REST calls:
+  `GET /filament?external_id=…`, falling back to `POST /filament`
+  (and creating the vendor) when missing, then
+  `GET /spool?allow_archived=true` filtered locally on
+  `extra.tag === tray_uuid`, then `POST /spool` when missing, then
+  `PATCH /spool/{id}` with `used_weight`, `first_used`, and
+  `last_used`. The `tag` extra field is registered on first use.
+* **Sync state** is tracked in memory per slot as a signature of
+  `tray_uuid|remain`. If the signature changes after a successful
+  sync, the dot turns yellow (stale) until the next push.
+* **Frontend**: React + Vite + [Mantine](https://mantine.dev),
+  TanStack Query for server state, dnd-kit for printer reordering,
+  react-i18next for translations (English and French).
+* **No database.** Only `config.json` (printers, Spoolman settings)
+  and a cached `filaments.json` live on disk, both in `DATA_DIR`.
 
 ### Environment variables
 
@@ -76,44 +142,6 @@ npm start
 | `HOST`     | `0.0.0.0` | Bind address                                  |
 | `DATA_DIR` | `./data`  | Where `config.json` and `filaments.json` live |
 
-## Configuration
-
-Everything is UI-driven. Add your first printer from the **Printers** page
-(name, host / IP, serial, access code):
-
-- Find the **serial** and **access code** on the printer's touchscreen
-  under **Settings → Device → Device Info** and
-  **Settings → Network → LAN-only mode**.
-- Tweak the mapping **refresh interval** under
-  **Settings → Filament mapping**.
-- Point the app at your Spoolman instance under **Settings → Spoolman**
-  (URL, plus an optional **auto-sync** switch). Use **Test connection**
-  to verify the URL before saving.
-
-Everything is persisted to `config.json` under `DATA_DIR`; the cached
-filament mapping lives next to it as `filaments.json`.
-
-## Slot statuses
-
-| Status          | Meaning                                                            |
-| --------------- | ------------------------------------------------------------------ |
-| **mapped**      | Known Bambu variant with a Spoolman equivalent — ready to sync     |
-| **unmapped**    | Known Bambu variant, but no Spoolman equivalent yet                |
-| **unknown**     | Bambu variant not in the mapping — probably a new SKU              |
-| **third party** | Non-Bambu spool, or a spool without an RFID tag                    |
-| **empty**       | Slot has no filament loaded                                        |
-
-## Privacy
-
-- Outbound connections: **your printers** (over the local network) and
-  **GitHub** (to refresh the filament mapping). Nothing else phones home.
-- No analytics, no telemetry, no accounts.
-- Access codes live only in your local `config.json`.
-
-## Roadmap
-
-- **Step 3** — Opt-in unmapped variant reporting back to `bambu-spoolman-db`.
-
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
