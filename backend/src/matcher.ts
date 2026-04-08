@@ -34,6 +34,12 @@ export interface AMSSlot {
   nozzle_temp_max: number | null;
   tray_weight: string | null;
   remain: number | null;
+  /**
+   * True when the AMS-level `tray_exist_bits` bitfield reports this
+   * slot as physically occupied. Lets us distinguish a truly empty
+   * slot from a loaded slot whose RFID couldn't be read.
+   */
+  present: boolean;
 }
 
 export type MatchType =
@@ -41,6 +47,7 @@ export type MatchType =
   | "known_unmapped"
   | "unknown_variant"
   | "third_party"
+  | "unknown_spool"
   | "empty";
 
 export interface MatchResult {
@@ -57,8 +64,18 @@ export function matchSlot(
   slot: AMSSlot,
   mapping: Map<string, FilamentEntry>
 ): MatchResult {
-  const empty = !slot.tray_type && !slot.tray_id_name && !slot.tray_sub_brands;
-  if (empty) return { type: "empty" };
+  // Physical presence comes from the AMS `tray_exist_bits` bitfield.
+  // If the slot isn't reported as occupied, it's genuinely empty —
+  // regardless of leftover tray fields.
+  if (!slot.present) return { type: "empty" };
+
+  const hasTrayInfo =
+    !!slot.tray_type || !!slot.tray_id_name || !!slot.tray_sub_brands;
+  // Tray physically present but the printer has no information at
+  // all about it (RFID unread, no reported material). Different from
+  // a third-party spool, which at least reports a material.
+  if (!hasTrayInfo) return { type: "unknown_spool" };
+
   if (!slot.tray_id_name) return { type: "third_party" };
   const entry = mapping.get(slot.tray_id_name);
   if (!entry) return { type: "unknown_variant" };

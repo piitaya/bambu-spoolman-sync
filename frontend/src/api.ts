@@ -67,6 +67,7 @@ export interface AMSSlotData {
   nozzle_temp_max: number | null;
   tray_weight: string | null;
   remain: number | null;
+  present: boolean;
 }
 
 export type MatchType =
@@ -74,6 +75,7 @@ export type MatchType =
   | "known_unmapped"
   | "unknown_variant"
   | "third_party"
+  | "unknown_spool"
   | "empty";
 
 export interface FilamentEntry {

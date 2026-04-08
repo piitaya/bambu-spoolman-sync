@@ -85,6 +85,16 @@ export function decodeNozzleId(info: unknown): number | null {
 }
 
 /**
+ * Decode a hex bitmask string (e.g. `"1d"`, `"100ff"`) into a number.
+ * Returns null if the value is missing or unparseable.
+ */
+function parseHexBits(value: unknown): number | null {
+  if (typeof value !== "string" || value.length === 0) return null;
+  const n = parseInt(value, 16);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
  * Flatten `payload.print.ams.ams[].tray[]` into a flat AMSSlot[].
  * Reference: https://github.com/Doridian/OpenBambuAPI/blob/main/mqtt.md
  */
@@ -92,7 +102,14 @@ export function parseAmsReport(
   printerSerial: string,
   payload: unknown
 ): AMSSlot[] {
-  const amsList = (payload as any)?.print?.ams?.ams;
+  // `tray_exist_bits` is a hex bitmask at the AMS-payload level:
+  // bit N = 1 means slot N of that AMS is physically occupied. This
+  // is the only reliable "is there a spool in this slot?" signal —
+  // per-tray `state` values are undocumented and differ between AMS
+  // generations (e.g. 9, 26 for empty, 11 for loaded).
+  const amsPayload = (payload as any)?.print?.ams;
+  const trayExistBits = parseHexBits(amsPayload?.tray_exist_bits);
+  const amsList = amsPayload?.ams;
   if (!Array.isArray(amsList)) return [];
   const slots: AMSSlot[] = [];
   for (const ams of amsList) {
@@ -100,11 +117,18 @@ export function parseAmsReport(
     const nozzleId = decodeNozzleId(ams?.info);
     const trays = Array.isArray(ams?.tray) ? ams.tray : [];
     for (const tray of trays) {
+      const slotId = Number(tray?.id ?? 0);
+      // tray_exist_bits is a flat bitmask covering up to 4 slots per
+      // AMS unit, packed as (amsId * 4 + slotId). For single-AMS
+      // printers this degenerates to bit = slotId.
+      const globalBit = amsId * 4 + slotId;
+      const present =
+        trayExistBits != null ? ((trayExistBits >> globalBit) & 1) === 1 : true;
       slots.push({
         printer_serial: printerSerial,
         ams_id: amsId,
         nozzle_id: nozzleId,
-        slot_id: Number(tray?.id ?? 0),
+        slot_id: slotId,
         tray_id_name: tray?.tray_id_name ?? null,
         tray_sub_brands: tray?.tray_sub_brands ?? null,
         tray_type: tray?.tray_type ?? null,
@@ -114,13 +138,20 @@ export function parseAmsReport(
               (c): c is string => typeof c === "string"
             )
           : null,
-        tray_uuid: tray?.tray_uuid ?? null,
+        // Normalize the all-zeros sentinel the printer sends for
+        // third-party / unread spools to null so downstream code can
+        // just check truthiness.
+        tray_uuid:
+          tray?.tray_uuid && !/^0+$/.test(tray.tray_uuid)
+            ? tray.tray_uuid
+            : null,
         nozzle_temp_min:
           tray?.nozzle_temp_min != null ? Number(tray.nozzle_temp_min) : null,
         nozzle_temp_max:
           tray?.nozzle_temp_max != null ? Number(tray.nozzle_temp_max) : null,
         tray_weight: tray?.tray_weight ?? null,
-        remain: tray?.remain != null ? Number(tray.remain) : null
+        remain: tray?.remain != null ? Number(tray.remain) : null,
+        present
       });
     }
   }

@@ -180,6 +180,7 @@ function SlotFill({
 
 export function SlotCard({ s }: { s: MatchedSlot }) {
   const isEmpty = s.type === "empty";
+  const isUnknownSpool = s.type === "unknown_spool";
   const [opened, { open, close }] = useDisclosure(false);
   const { t } = useTranslation();
   const matchStatus = useMatchStatus();
@@ -195,11 +196,19 @@ export function SlotCard({ s }: { s: MatchedSlot }) {
   // push the material to the secondary line. Otherwise fall back to
   // the raw MQTT fields (material headline, RFID id as secondary).
   const colorName = s.entry?.color_name;
-  const material = s.slot.tray_sub_brands ?? s.slot.tray_type ?? null;
+  const material =
+    s.slot.tray_sub_brands?.trim() || s.slot.tray_type?.trim() || null;
   const headline = isEmpty
     ? t("slot.no_spool_loaded")
-    : (colorName ?? material ?? "—");
-  const secondary = isEmpty ? null : colorName ? material : s.slot.tray_id_name;
+    : isUnknownSpool
+      ? t("slot.unknown_spool")
+      : (colorName ?? material ?? "—");
+  const secondary =
+    isEmpty || isUnknownSpool
+      ? null
+      : colorName
+        ? material
+        : s.slot.tray_id_name;
 
   const totalGrams = s.slot.tray_weight ? Number(s.slot.tray_weight) : null;
   const totalGramsValid =
@@ -235,7 +244,7 @@ export function SlotCard({ s }: { s: MatchedSlot }) {
               color="gray"
               size="sm"
               onClick={open}
-              disabled={isEmpty}
+              disabled={isEmpty || isUnknownSpool}
               aria-label={t("slot.details_aria_label")}
             >
               <IconInfoCircle size={16} />
@@ -244,13 +253,13 @@ export function SlotCard({ s }: { s: MatchedSlot }) {
         </Group>
         <Stack gap="sm">
           <Group gap="sm" align="flex-start" wrap="nowrap">
-            <ColorSwatch hex={isEmpty ? null : s.slot.tray_color} />
+            <ColorSwatch hex={isEmpty || isUnknownSpool ? null : s.slot.tray_color} />
             <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
               <Text
                 size="sm"
                 fw={500}
                 truncate
-                c={isEmpty ? "dimmed" : undefined}
+                c={isEmpty || isUnknownSpool ? "dimmed" : undefined}
               >
                 {headline}
               </Text>
@@ -260,8 +269,12 @@ export function SlotCard({ s }: { s: MatchedSlot }) {
             </Stack>
           </Group>
           <SlotFill
-            totalGrams={isEmpty ? null : totalGramsValid}
-            remainPct={isEmpty ? null : s.slot.remain}
+            totalGrams={isEmpty || isUnknownSpool ? null : totalGramsValid}
+            remainPct={
+              isEmpty || isUnknownSpool || s.slot.remain == null || s.slot.remain < 0
+                ? null
+                : s.slot.remain
+            }
           />
         </Stack>
       </Card>

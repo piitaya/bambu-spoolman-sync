@@ -13,6 +13,7 @@ const MATCH_COLORS: Record<MatchType, string> = {
   known_unmapped: "yellow",
   unknown_variant: "orange",
   third_party: "gray",
+  unknown_spool: "gray",
   empty: "gray"
 };
 
@@ -22,6 +23,7 @@ export const MATCH_STATUS_ORDER: MatchType[] = [
   "known_unmapped",
   "unknown_variant",
   "third_party",
+  "unknown_spool",
   "empty"
 ];
 
@@ -53,6 +55,11 @@ export function useMatchStatus(): Record<MatchType, MatchStatusInfo> {
         label: t("status.third_party.label"),
         color: MATCH_COLORS.third_party,
         description: t("status.third_party.description")
+      },
+      unknown_spool: {
+        label: t("status.unknown_spool.label"),
+        color: MATCH_COLORS.unknown_spool,
+        description: t("status.unknown_spool.description")
       },
       empty: {
         label: t("status.empty.label"),

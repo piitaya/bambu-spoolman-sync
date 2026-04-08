@@ -51,6 +51,7 @@
   "slot": {
     "label": "Slot {{n}}",
     "no_spool_loaded": "No spool loaded",
+    "unknown_spool": "Unidentified spool",
     "remaining": "Remaining: {{value}}%",
     "details_aria_label": "Slot details",
     "sync_aria_label": "Sync this slot to Spoolman",
@@ -110,6 +111,10 @@
     "third_party": {
       "label": "Third party",
       "description": "Non-Bambu spool or no RFID tag."
+    },
+    "unknown_spool": {
+      "label": "Unidentified",
+      "description": "Spool detected but the printer has no info about it yet (e.g. a third-party spool without material set)."
     },
     "empty": {
       "label": "Empty",

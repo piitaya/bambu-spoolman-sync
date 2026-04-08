@@ -9,16 +9,19 @@ const mapping = new Map<string, FilamentEntry>([
 const baseSlot = (over: Partial<AMSSlot> = {}): AMSSlot => ({
   printer_serial: "AC12",
   ams_id: 0,
+  nozzle_id: 0,
   slot_id: 0,
   tray_id_name: "A01-B6",
   tray_sub_brands: "PLA Matte",
   tray_type: "PLA",
   tray_color: "042F56FF",
+  tray_colors: null,
   tray_uuid: "UUID1",
   nozzle_temp_min: 220,
   nozzle_temp_max: 240,
   tray_weight: "1000",
   remain: 80,
+  present: true,
   ...over
 });
 

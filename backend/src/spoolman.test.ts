@@ -31,11 +31,13 @@ const slot = (over: Partial<AMSSlot> = {}): AMSSlot => ({
   tray_sub_brands: "PLA Matte",
   tray_type: "PLA",
   tray_color: "042F56FF",
+  tray_colors: null,
   tray_uuid: "UID-1",
   nozzle_temp_min: 220,
   nozzle_temp_max: 240,
   tray_weight: "1000",
   remain: 75,
+  present: true,
   ...over
 });
 

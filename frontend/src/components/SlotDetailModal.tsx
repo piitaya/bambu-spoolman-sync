@@ -213,7 +213,11 @@ export function SlotDetailModal({
             <Row
               label={t("slot.fields.material")}
               value={
-                <Plain>{s.tray_sub_brands ?? s.tray_type ?? "—"}</Plain>
+                <Plain>
+                  {s.tray_sub_brands?.trim() ||
+                    s.tray_type?.trim() ||
+                    "—"}
+                </Plain>
               }
             />
 
@@ -238,13 +242,17 @@ export function SlotDetailModal({
             )}
 
             <SectionHeader label={t("slot.sections.physical")} />
-            {s.tray_weight && (
-              <Row
-                label={t("slot.fields.total_weight")}
-                value={<Plain>{s.tray_weight} g</Plain>}
-              />
-            )}
-            {s.remain != null && (
+            {(() => {
+              const w = s.tray_weight ? Number(s.tray_weight) : NaN;
+              if (!Number.isFinite(w) || w <= 0) return null;
+              return (
+                <Row
+                  label={t("slot.fields.total_weight")}
+                  value={<Plain>{w} g</Plain>}
+                />
+              );
+            })()}
+            {s.remain != null && s.remain >= 0 && (
               <Row
                 label={t("slot.fields.remaining")}
                 value={<Plain>{s.remain}%</Plain>}
