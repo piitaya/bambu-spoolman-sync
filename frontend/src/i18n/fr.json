@@ -143,6 +143,8 @@
       "url": "URL Spoolman",
       "auto_sync": "Synchronisation automatique sur changement AMS",
       "auto_sync_hint": "Quand un slot correspondant change, il est envoyé automatiquement à Spoolman.",
+      "archive_on_empty": "Archiver les bobines vides",
+      "archive_on_empty_hint": "Quand le poids restant d'une bobine atteint zéro, elle est archivée dans Spoolman.",
       "test": "Tester la connexion",
       "test_ok": "Connecté à Spoolman {{version}}"
     },

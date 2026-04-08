@@ -21,6 +21,7 @@ export interface Config {
   spoolman: {
     url?: string;
     auto_sync: boolean;
+    archive_on_empty: boolean;
   };
 }
 

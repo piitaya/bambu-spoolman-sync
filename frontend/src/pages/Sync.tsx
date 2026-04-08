@@ -102,6 +102,17 @@ export default function SyncPage() {
     });
   };
 
+  const toggleArchiveOnEmpty = async (value: boolean) => {
+    if (!data) return;
+    await put.mutateAsync({
+      ...data.config,
+      spoolman: {
+        ...data.config.spoolman,
+        archive_on_empty: value
+      }
+    });
+  };
+
   const spoolmanConfigured = Boolean(savedUrl);
   const showSyncActions =
     spoolmanConfigured && !data?.config.spoolman?.auto_sync;
@@ -171,6 +182,15 @@ export default function SyncPage() {
               description={t("sync.connection_card.auto_sync_hint")}
               checked={data?.config.spoolman?.auto_sync ?? false}
               onChange={(e) => void toggleAutoSync(e.currentTarget.checked)}
+              disabled={!spoolmanConfigured || put.isPending}
+            />
+            <Switch
+              label={t("sync.connection_card.archive_on_empty")}
+              description={t("sync.connection_card.archive_on_empty_hint")}
+              checked={data?.config.spoolman?.archive_on_empty ?? false}
+              onChange={(e) =>
+                void toggleArchiveOnEmpty(e.currentTarget.checked)
+              }
               disabled={!spoolmanConfigured || put.isPending}
             />
           </Stack>

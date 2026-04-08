@@ -143,6 +143,8 @@
       "url": "Spoolman URL",
       "auto_sync": "Auto-sync on AMS updates",
       "auto_sync_hint": "When a matched slot changes, push it to Spoolman automatically.",
+      "archive_on_empty": "Archive empty spools",
+      "archive_on_empty_hint": "When a spool's remaining weight reaches zero, archive it in Spoolman.",
       "test": "Test connection",
       "test_ok": "Connected to Spoolman {{version}}"
     },

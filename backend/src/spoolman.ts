@@ -20,6 +20,7 @@ export interface SpoolmanSpool {
   filament: { id: number };
   first_used?: string | null;
   last_used?: string | null;
+  archived?: boolean;
   extra?: Record<string, string>;
 }
 
@@ -110,6 +111,7 @@ export interface SpoolmanClient {
       used_weight: number;
       last_used: string;
       first_used?: string;
+      archived?: boolean;
     }
   ): Promise<SpoolmanSpool>;
 }
@@ -216,9 +218,12 @@ export function createSpoolmanClient(
     },
 
     async listSpools() {
+      // Include archived spools so we can find & refresh them instead
+      // of creating a duplicate on the next sync (e.g. after archive
+      // on empty, or a physically-refilled spool).
       return request<SpoolmanSpool[]>(
         "GET",
-        "/api/v1/spool?allow_archived=false"
+        "/api/v1/spool?allow_archived=true"
       );
     },
 
@@ -295,7 +300,8 @@ async function syncOneSlot(
   client: SpoolmanClient,
   slot: AMSSlot,
   spoolmanId: string,
-  usedWeight: number
+  usedWeight: number,
+  options: { archiveOnEmpty: boolean }
 ): Promise<Omit<SyncOutcome, "printer_serial" | "ams_id" | "slot_id">> {
   let createdFilament = false;
   let filament = await client.findFilamentByExternalId(spoolmanId);
@@ -315,13 +321,15 @@ async function syncOneSlot(
   }
 
   const now = new Date().toISOString();
+  const shouldArchive = options.archiveOnEmpty && slot.remain === 0;
   await client.updateSpool(spool.id, {
     used_weight: usedWeight,
     last_used: now,
     // Backfill for spools that existed before we started tracking
     // first_used (e.g. created manually in Spoolman). Freshly-created
     // spools already carry it from createSpool, so this is a no-op.
-    ...(spool.first_used ? {} : { first_used: now })
+    ...(spool.first_used ? {} : { first_used: now }),
+    ...(shouldArchive ? { archived: true } : {})
   });
   return {
     spool_id: spool.id,
@@ -372,7 +380,8 @@ export async function syncSlot(
     client,
     slot,
     evaluated.spoolmanId,
-    evaluated.usedWeight
+    evaluated.usedWeight,
+    { archiveOnEmpty: ctx.config.spoolman?.archive_on_empty ?? false }
   );
   return {
     printer_serial: printerSerial,
@@ -389,6 +398,9 @@ export async function syncAll(
   const url = ctx.config.spoolman?.url;
   if (!url) throw new Error("Spoolman URL is not configured.");
   const client = clientFactory(url);
+  const options = {
+    archiveOnEmpty: ctx.config.spoolman?.archive_on_empty ?? false
+  };
 
   const result: SyncAllResult = { synced: [], skipped: [], errors: [] };
   for (const runtime of listRuntimes(ctx.mqttState)) {
@@ -408,7 +420,8 @@ export async function syncAll(
           client,
           slot,
           evaluated.spoolmanId,
-          evaluated.usedWeight
+          evaluated.usedWeight,
+          options
         );
         result.synced.push({
           printer_serial: runtime.printer.serial,

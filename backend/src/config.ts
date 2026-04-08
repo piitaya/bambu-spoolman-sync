@@ -24,7 +24,8 @@ export const ConfigSchema = z.object({
   spoolman: z
     .object({
       url: z.string().url().optional(),
-      auto_sync: z.boolean().default(false)
+      auto_sync: z.boolean().default(false),
+      archive_on_empty: z.boolean().default(false)
     })
     .default({})
 });
