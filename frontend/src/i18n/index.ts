@@ -10,7 +10,7 @@ export const LANGUAGES = {
 
 export type Language = keyof typeof LANGUAGES;
 
-const DEFAULT_LANGUAGE: Language = "en";
+export const DEFAULT_LANGUAGE: Language = "en";
 const STORAGE_KEY = "language";
 
 function detectInitialLanguage(): Language {

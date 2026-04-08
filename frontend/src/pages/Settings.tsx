@@ -6,7 +6,8 @@ import {
   Select,
   Stack,
   Text,
-  Title
+  Title,
+  useMantineColorScheme
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useEffect, useMemo } from "react";
@@ -17,7 +18,12 @@ import {
   usePutConfig,
   useRefreshMapping
 } from "../hooks";
-import { LANGUAGES, persistLanguage, type Language } from "../i18n";
+import {
+  DEFAULT_LANGUAGE,
+  LANGUAGES,
+  persistLanguage,
+  type Language
+} from "../i18n";
 
 interface FormValues {
   refresh_interval_hours: number;
@@ -31,6 +37,7 @@ export default function SettingsPage() {
   const put = usePutConfig();
   const refresh = useRefreshMapping();
   const { t, i18n } = useTranslation();
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
 
   const form = useForm<FormValues>({
     initialValues: { refresh_interval_hours: 24 }
@@ -79,18 +86,35 @@ export default function SettingsPage() {
     persistLanguage(lang);
   };
 
+  const onThemeChange = (value: string | null) => {
+    if (value === "light" || value === "dark" || value === "auto") {
+      setColorScheme(value);
+    }
+  };
+
   return (
     <Stack gap="lg" maw={640}>
       <Title order={2}>{t("settings.title")}</Title>
 
       <Card withBorder padding="lg" radius="md">
         <Stack gap="md">
-          <Title order={4}>{t("settings.language_card.title")}</Title>
+          <Title order={4}>{t("settings.appearance_card.title")}</Title>
           <Select
-            label={t("settings.language_card.label")}
-            value={i18n.language in LANGUAGES ? i18n.language : "en"}
+            label={t("settings.appearance_card.language")}
+            value={i18n.language in LANGUAGES ? i18n.language : DEFAULT_LANGUAGE}
             onChange={onLanguageChange}
             data={languageOptions}
+            allowDeselect={false}
+          />
+          <Select
+            label={t("settings.appearance_card.theme")}
+            value={colorScheme}
+            onChange={onThemeChange}
+            data={[
+              { value: "auto", label: t("settings.appearance_card.theme_auto") },
+              { value: "light", label: t("settings.appearance_card.theme_light") },
+              { value: "dark", label: t("settings.appearance_card.theme_dark") }
+            ]}
             allowDeselect={false}
           />
         </Stack>

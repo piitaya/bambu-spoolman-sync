@@ -162,9 +162,13 @@
       "refresh_now": "Rafraîchir maintenant",
       "refreshed": "Mappage rafraîchi ({{count}} variantes)"
     },
-    "language_card": {
-      "title": "Langue",
-      "label": "Langue d'affichage"
+    "appearance_card": {
+      "title": "Apparence",
+      "language": "Langue d'affichage",
+      "theme": "Thème",
+      "theme_auto": "Automatique (système)",
+      "theme_light": "Clair",
+      "theme_dark": "Sombre"
     }
   },
   "sync": {

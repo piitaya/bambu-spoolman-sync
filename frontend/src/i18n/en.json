@@ -162,9 +162,13 @@
       "refresh_now": "Refresh mapping now",
       "refreshed": "Mapping refreshed ({{count}} variants)"
     },
-    "language_card": {
-      "title": "Language",
-      "label": "Display language"
+    "appearance_card": {
+      "title": "Appearance",
+      "language": "Display language",
+      "theme": "Theme",
+      "theme_auto": "Auto (match system)",
+      "theme_light": "Light",
+      "theme_dark": "Dark"
     }
   },
   "sync": {

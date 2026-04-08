@@ -1,7 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MantineProvider } from "@mantine/core";
+import {
+  MantineProvider,
+  localStorageColorSchemeManager
+} from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
@@ -16,9 +19,18 @@ const queryClient = new QueryClient({
   }
 });
 
+// Persist the user's light/dark/auto choice across reloads under a
+// stable key so the first paint already uses the right scheme.
+const colorSchemeManager = localStorageColorSchemeManager({
+  key: "color-scheme"
+});
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <MantineProvider defaultColorScheme="light">
+    <MantineProvider
+      defaultColorScheme="auto"
+      colorSchemeManager={colorSchemeManager}
+    >
       <Notifications position="top-right" />
       <QueryClientProvider client={queryClient}>
         <App />
