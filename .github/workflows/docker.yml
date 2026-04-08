@@ -3,7 +3,8 @@ name: Docker
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+  release:
+    types: [published]
   workflow_dispatch:
 
 env:
@@ -36,19 +37,27 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           # Tag scheme:
           #  * main push              → edge + sha-xxx
-          #  * stable tag v1.2.3       → 1.2.3 + 1.2 + 1 + latest + sha-xxx
-          #  * beta  tag v1.2.3-beta.1 → 1.2.3-beta.1 + beta + sha-xxx
-          #  * alpha tag v1.2.3-alpha.1 → 1.2.3-alpha.1 + alpha + sha-xxx
-          # Pre-releases never touch latest or the major/minor aliases,
-          # so users pinning "1.2" can't land on an unstable build.
+          #  * stable  v1.2.3          → 1.2.3 + 1.2 + 1 + latest + beta + alpha + sha-xxx
+          #  * beta    v1.2.3-beta.1   → 1.2.3-beta.1 + beta + alpha + sha-xxx
+          #  * alpha   v1.2.3-alpha.1  → 1.2.3-alpha.1 + alpha + sha-xxx
+          #
+          # Channels fast-forward: stable updates beta and alpha,
+          # beta updates alpha. That way users on :beta or :alpha
+          # always get the newest thing they signed up to try — so a
+          # long stable-only stretch doesn't leave them stuck on an
+          # old pre-release.
+          #
+          # Pre-releases never touch latest or the major/minor
+          # aliases, so users pinning "1.2" can't land on an unstable
+          # build.
           tags: |
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}},enable=${{ !contains(github.ref, '-') }}
             type=semver,pattern={{major}},enable=${{ !contains(github.ref, '-') }}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-') }}
-            type=raw,value=beta,enable=${{ contains(github.ref, '-beta.') }}
-            type=raw,value=alpha,enable=${{ contains(github.ref, '-alpha.') }}
+            type=raw,value=beta,enable=${{ startsWith(github.ref, 'refs/tags/v') && (!contains(github.ref, '-') || contains(github.ref, '-beta.')) }}
+            type=raw,value=alpha,enable=${{ startsWith(github.ref, 'refs/tags/v') && (!contains(github.ref, '-') || contains(github.ref, '-beta.') || contains(github.ref, '-alpha.')) }}
             type=raw,value=edge,enable={{is_default_branch}}
             type=sha,format=short
 
