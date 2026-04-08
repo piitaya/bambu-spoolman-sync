@@ -1,0 +1,137 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "printers": "Printers",
+    "settings": "Settings",
+    "toggle_navigation": "Toggle navigation"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "copy": "Copy",
+    "copied": "Copied",
+    "left_nozzle": "Left nozzle",
+    "right_nozzle": "Right nozzle",
+    "drag_handle": "Drag to reorder"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "help_aria_label": "What do the slot statuses mean?",
+    "failed_to_load": "Failed to load state",
+    "no_printers_title": "No printers configured",
+    "no_printers_body": "Head to the Printers page to add your first Bambu printer.",
+    "empty": {
+      "title": "Waiting for AMS data",
+      "body": "The printer hasn't reported its state yet."
+    },
+    "errors": {
+      "unauthorized": {
+        "title": "Invalid access code",
+        "description": "The printer rejected the access code. Verify it on the Printers page."
+      },
+      "no_response": {
+        "title": "No response from printer",
+        "description": "Connected successfully but the printer isn't reporting state. Verify the serial number on the Printers page."
+      },
+      "unreachable": {
+        "title": "Printer unreachable",
+        "description": "Couldn't connect to the printer. Verify the host (IP or hostname) on the Printers page."
+      },
+      "other": {
+        "title": "Connection error",
+        "description": ""
+      }
+    }
+  },
+  "slot": {
+    "label": "Slot {{n}}",
+    "no_spool_loaded": "No spool loaded",
+    "remaining": "Remaining: {{value}}%",
+    "details_aria_label": "Slot details",
+    "fields": {
+      "color": "Color",
+      "material": "Material",
+      "variant_id": "Variant ID",
+      "spoolman_id": "Spoolman ID",
+      "color_hex": "Color hex",
+      "nozzle_temp": "Nozzle temp",
+      "spool_weight": "Spool weight",
+      "remaining": "Remaining",
+      "tray_uuid": "Tray UUID",
+      "printer": "Printer"
+    }
+  },
+  "status": {
+    "legend_title": "Slot status guide",
+    "legend_intro": "Each AMS slot is matched against a community-maintained list of Bambu spools. The badge tells you whether the spool is recognized and ready to sync to Spoolman.",
+    "mapped": {
+      "label": "Mapped",
+      "description": "Known Bambu spool with a Spoolman equivalent. Ready to sync."
+    },
+    "unmapped": {
+      "label": "Unmapped",
+      "description": "Known Bambu spool, but no Spoolman equivalent yet."
+    },
+    "unknown": {
+      "label": "Unknown",
+      "description": "Bambu spool we don't recognize yet."
+    },
+    "third_party": {
+      "label": "Third party",
+      "description": "Non-Bambu spool or no RFID tag."
+    },
+    "empty": {
+      "label": "Empty",
+      "description": "No spool loaded."
+    }
+  },
+  "printers": {
+    "title": "Printers",
+    "add_printer": "Add printer",
+    "edit_printer": "Edit printer",
+    "none": "No printers configured yet.",
+    "columns": {
+      "name": "Name",
+      "host": "Host",
+      "serial": "Serial",
+      "enabled": "Enabled"
+    },
+    "form": {
+      "name": "Name",
+      "host": "Host (IP or hostname)",
+      "host_placeholder": "192.168.1.42",
+      "serial": "Serial",
+      "access_code": "Access code",
+      "enabled": "Enabled",
+      "required": "Required"
+    },
+    "notifications": {
+      "added": "Printer added",
+      "updated": "Printer updated",
+      "deleted": "Printer deleted",
+      "duplicate_serial": "A printer with this serial number is already configured."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "saved": "Settings saved",
+    "mapping_card": {
+      "title": "Filament mapping",
+      "source_hint": "The mapping is downloaded from {{repo}}.",
+      "last_fetched": "Last fetched: {{when}} · {{count}} variants.",
+      "never": "never",
+      "refresh_interval": "Refresh interval (hours)",
+      "refresh_now": "Refresh mapping now",
+      "refreshed": "Mapping refreshed ({{count}} variants)"
+    },
+    "language_card": {
+      "title": "Language",
+      "label": "Display language"
+    }
+  },
+  "errors": {
+    "generic": "Error"
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "printers": "Imprimantes",
+    "settings": "Paramètres",
+    "toggle_navigation": "Afficher le menu"
+  },
+  "common": {
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "copy": "Copier",
+    "copied": "Copié",
+    "left_nozzle": "Buse gauche",
+    "right_nozzle": "Buse droite",
+    "drag_handle": "Glisser pour réordonner"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "help_aria_label": "Que signifient les statuts des slots ?",
+    "failed_to_load": "Impossible de charger l'état",
+    "no_printers_title": "Aucune imprimante configurée",
+    "no_printers_body": "Rendez-vous sur la page Imprimantes pour ajouter votre première imprimante Bambu.",
+    "empty": {
+      "title": "En attente de données AMS",
+      "body": "L'imprimante n'a pas encore envoyé son état."
+    },
+    "errors": {
+      "unauthorized": {
+        "title": "Code d'accès invalide",
+        "description": "L'imprimante a refusé le code d'accès. Vérifiez-le sur la page Imprimantes."
+      },
+      "no_response": {
+        "title": "Aucune réponse de l'imprimante",
+        "description": "La connexion a réussi mais l'imprimante n'envoie aucun état. Vérifiez le numéro de série sur la page Imprimantes."
+      },
+      "unreachable": {
+        "title": "Imprimante injoignable",
+        "description": "Impossible de se connecter à l'imprimante. Vérifiez l'hôte (IP ou nom de domaine) sur la page Imprimantes."
+      },
+      "other": {
+        "title": "Erreur de connexion",
+        "description": ""
+      }
+    }
+  },
+  "slot": {
+    "label": "Slot {{n}}",
+    "no_spool_loaded": "Aucune bobine chargée",
+    "remaining": "Restant : {{value}}%",
+    "details_aria_label": "Détails du slot",
+    "fields": {
+      "color": "Couleur",
+      "material": "Matériau",
+      "variant_id": "ID de variante",
+      "spoolman_id": "ID Spoolman",
+      "color_hex": "Couleur (hex)",
+      "nozzle_temp": "Température buse",
+      "spool_weight": "Poids de la bobine",
+      "remaining": "Restant",
+      "tray_uuid": "UUID du tray",
+      "printer": "Imprimante"
+    }
+  },
+  "status": {
+    "legend_title": "Guide des statuts",
+    "legend_intro": "Chaque slot AMS est comparé à une liste communautaire de bobines Bambu. Le badge indique si la bobine est reconnue et prête à être synchronisée avec Spoolman.",
+    "mapped": {
+      "label": "Reconnue",
+      "description": "Bobine Bambu connue avec un équivalent Spoolman. Prête à synchroniser."
+    },
+    "unmapped": {
+      "label": "Sans correspondance",
+      "description": "Bobine Bambu connue, mais pas encore d'équivalent Spoolman."
+    },
+    "unknown": {
+      "label": "Inconnue",
+      "description": "Bobine Bambu que nous ne reconnaissons pas encore."
+    },
+    "third_party": {
+      "label": "Tierce",
+      "description": "Bobine non-Bambu ou sans étiquette RFID."
+    },
+    "empty": {
+      "label": "Vide",
+      "description": "Aucune bobine chargée."
+    }
+  },
+  "printers": {
+    "title": "Imprimantes",
+    "add_printer": "Ajouter une imprimante",
+    "edit_printer": "Modifier l'imprimante",
+    "none": "Aucune imprimante configurée pour le moment.",
+    "columns": {
+      "name": "Nom",
+      "host": "Hôte",
+      "serial": "Numéro de série",
+      "enabled": "Activée"
+    },
+    "form": {
+      "name": "Nom",
+      "host": "Hôte (IP ou nom de domaine)",
+      "host_placeholder": "192.168.1.42",
+      "serial": "Numéro de série",
+      "access_code": "Code d'accès",
+      "enabled": "Activée",
+      "required": "Requis"
+    },
+    "notifications": {
+      "added": "Imprimante ajoutée",
+      "updated": "Imprimante mise à jour",
+      "deleted": "Imprimante supprimée",
+      "duplicate_serial": "Une imprimante avec ce numéro de série est déjà configurée."
+    }
+  },
+  "settings": {
+    "title": "Paramètres",
+    "saved": "Paramètres enregistrés",
+    "mapping_card": {
+      "title": "Mappage des filaments",
+      "source_hint": "Le mappage est téléchargé depuis {{repo}}.",
+      "last_fetched": "Dernière mise à jour : {{when}} · {{count}} variantes.",
+      "never": "jamais",
+      "refresh_interval": "Intervalle de rafraîchissement (heures)",
+      "refresh_now": "Rafraîchir maintenant",
+      "refreshed": "Mappage rafraîchi ({{count}} variantes)"
+    },
+    "language_card": {
+      "title": "Langue",
+      "label": "Langue d'affichage"
+    }
+  },
+  "errors": {
+    "generic": "Erreur"
+  }
+}
