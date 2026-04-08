@@ -1,9 +1,9 @@
 import {
   ActionIcon,
   Button,
+  Card,
   Group,
   Modal,
-  PasswordInput,
   Stack,
   Switch,
   Table,
@@ -11,7 +11,7 @@ import {
   TextInput,
   Title
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
 import { IconEdit, IconGripVertical, IconTrash } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
@@ -36,7 +36,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   useConfig,
   useCreatePrinter,
-  useDeletePrinter,
+  useRemovePrinter,
   useReorderPrinters,
   useUpdatePrinter
 } from "../hooks";
@@ -57,6 +57,94 @@ interface RowProps {
   onEdit: (p: Printer) => void;
   onDelete: (serial: string) => void;
   onToggleEnabled: (p: Printer, enabled: boolean) => void;
+}
+
+function SortablePrinterCard({
+  printer: p,
+  onEdit,
+  onDelete,
+  onToggleEnabled
+}: RowProps) {
+  const { t } = useTranslation();
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: p.serial });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    position: "relative",
+    zIndex: isDragging ? 2 : undefined
+  };
+
+  return (
+    <Card withBorder padding="sm" radius="md" ref={setNodeRef} style={style}>
+      <Group gap="xs" wrap="nowrap" align="flex-start">
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          aria-label={t("common.drag_handle")}
+          style={{ cursor: isDragging ? "grabbing" : "grab", flexShrink: 0 }}
+          {...attributes}
+          {...listeners}
+        >
+          <IconGripVertical size={16} />
+        </ActionIcon>
+        <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+          <Group gap="xs" wrap="nowrap" align="center">
+            <Text fw={500} truncate style={{ flex: 1, minWidth: 0 }}>
+              {p.name}
+            </Text>
+            <Switch
+              checked={p.enabled}
+              onChange={(e) => onToggleEnabled(p, e.currentTarget.checked)}
+              aria-label={t("printers.columns.enabled")}
+              style={{ flexShrink: 0 }}
+            />
+          </Group>
+          <Text size="xs" c="dimmed" truncate>
+            {p.host}
+          </Text>
+          <Group gap="xs" wrap="nowrap" align="center">
+            <Text
+              size="xs"
+              c="dimmed"
+              ff="monospace"
+              truncate
+              style={{ flex: 1, minWidth: 0 }}
+            >
+              {p.serial}
+            </Text>
+            <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
+              <ActionIcon
+                variant="subtle"
+                size="sm"
+                onClick={() => onEdit(p)}
+                aria-label={t("common.edit")}
+              >
+                <IconEdit size={16} />
+              </ActionIcon>
+              <ActionIcon
+                variant="subtle"
+                color="red"
+                size="sm"
+                onClick={() => onDelete(p.serial)}
+                aria-label={t("common.remove")}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Group>
+          </Group>
+        </Stack>
+      </Group>
+    </Card>
+  );
 }
 
 function SortablePrinterRow({
@@ -113,8 +201,8 @@ function SortablePrinterRow({
           aria-label={t("printers.columns.enabled")}
         />
       </Table.Td>
-      <Table.Td>
-        <Group gap="xs">
+      <Table.Td style={{ width: 1, whiteSpace: "nowrap" }}>
+        <Group gap="xs" justify="flex-end" wrap="nowrap">
           <ActionIcon
             variant="subtle"
             onClick={() => onEdit(p)}
@@ -126,7 +214,7 @@ function SortablePrinterRow({
             variant="subtle"
             color="red"
             onClick={() => onDelete(p.serial)}
-            aria-label={t("common.delete")}
+            aria-label={t("common.remove")}
           >
             <IconTrash size={16} />
           </ActionIcon>
@@ -141,10 +229,13 @@ export default function PrintersPage() {
   const { t } = useTranslation();
   const create = useCreatePrinter();
   const update = useUpdatePrinter();
-  const del = useDeletePrinter();
+  const remove = useRemovePrinter();
   const reorder = useReorderPrinters();
   const [opened, { open, close }] = useDisclosure(false);
   const [editing, setEditing] = useState<Printer | null>(null);
+  const [toRemove, setToDelete] = useState<Printer | null>(null);
+
+  const isMobile = useMediaQuery("(max-width: 48em)") ?? false;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -262,34 +353,54 @@ export default function PrintersPage() {
           collisionDetection={closestCenter}
           onDragEnd={onDragEnd}
         >
-          <Table striped withTableBorder>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th />
-                <Table.Th>{t("printers.columns.name")}</Table.Th>
-                <Table.Th>{t("printers.columns.host")}</Table.Th>
-                <Table.Th>{t("printers.columns.serial")}</Table.Th>
-                <Table.Th>{t("printers.columns.enabled")}</Table.Th>
-                <Table.Th />
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              <SortableContext
-                items={printerSerials}
-                strategy={verticalListSortingStrategy}
-              >
+          <SortableContext
+            items={printerSerials}
+            strategy={verticalListSortingStrategy}
+          >
+            {isMobile ? (
+              <Stack gap="sm">
                 {printers.map((p) => (
-                  <SortablePrinterRow
+                  <SortablePrinterCard
                     key={p.serial}
                     printer={p}
                     onEdit={openEdit}
-                    onDelete={(serial) => del.mutate(serial)}
+                    onDelete={(serial) => {
+                      const p = printers.find((x) => x.serial === serial);
+                      if (p) setToDelete(p);
+                    }}
                     onToggleEnabled={toggleEnabled}
                   />
                 ))}
-              </SortableContext>
-            </Table.Tbody>
-          </Table>
+              </Stack>
+            ) : (
+              <Table striped withTableBorder>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th />
+                    <Table.Th>{t("printers.columns.name")}</Table.Th>
+                    <Table.Th>{t("printers.columns.host")}</Table.Th>
+                    <Table.Th>{t("printers.columns.serial")}</Table.Th>
+                    <Table.Th>{t("printers.columns.enabled")}</Table.Th>
+                    <Table.Th />
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {printers.map((p) => (
+                    <SortablePrinterRow
+                      key={p.serial}
+                      printer={p}
+                      onEdit={openEdit}
+                      onDelete={(serial) => {
+                      const p = printers.find((x) => x.serial === serial);
+                      if (p) setToDelete(p);
+                    }}
+                      onToggleEnabled={toggleEnabled}
+                    />
+                  ))}
+                </Table.Tbody>
+              </Table>
+            )}
+          </SortableContext>
         </DndContext>
       )}
 
@@ -317,9 +428,17 @@ export default function PrintersPage() {
               required
               {...form.getInputProps("serial")}
             />
-            <PasswordInput
+            <TextInput
               label={t("printers.form.access_code")}
               required
+              // Plain text: Chrome flags `type="password"` fields
+              // against its breach database, which is nonsense for a
+              // LAN-only device access code.
+              autoComplete="off"
+              spellCheck={false}
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
               {...form.getInputProps("access_code")}
             />
             <Switch
@@ -339,6 +458,38 @@ export default function PrintersPage() {
             </Group>
           </Stack>
         </form>
+      </Modal>
+
+      <Modal
+        opened={toRemove !== null}
+        onClose={() => setToDelete(null)}
+        title={t("printers.remove_confirm_title")}
+        centered
+        size="sm"
+      >
+        <Stack>
+          <Text size="sm">
+            {t("printers.remove_confirm_body", { name: toRemove?.name ?? "" })}
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setToDelete(null)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              color="red"
+              loading={remove.isPending}
+              onClick={() => {
+                if (!toRemove) return;
+                remove.mutate(toRemove.serial, {
+                  onSuccess: () => setToDelete(null),
+                  onError: () => setToDelete(null)
+                });
+              }}
+            >
+              {t("common.remove")}
+            </Button>
+          </Group>
+        </Stack>
       </Modal>
     </Stack>
   );

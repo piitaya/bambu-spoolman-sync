@@ -10,7 +10,7 @@
     "cancel": "Annuler",
     "save": "Enregistrer",
     "edit": "Modifier",
-    "delete": "Supprimer",
+    "remove": "Retirer",
     "copy": "Copier",
     "copied": "Copié",
     "left_nozzle": "Buse gauche",
@@ -136,10 +136,12 @@
       "enabled": "Activée",
       "required": "Requis"
     },
+    "remove_confirm_title": "Retirer l'imprimante ?",
+    "remove_confirm_body": "« {{name}} » sera retirée de la liste. Vous pourrez l'ajouter à nouveau plus tard.",
     "notifications": {
       "added": "Imprimante ajoutée",
       "updated": "Imprimante mise à jour",
-      "deleted": "Imprimante supprimée",
+      "removed": "Imprimante retirée",
       "duplicate_serial": "Une imprimante avec ce numéro de série est déjà configurée."
     }
   },

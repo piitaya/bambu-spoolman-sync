@@ -94,15 +94,15 @@ export const useUpdatePrinter = () => {
   });
 };
 
-export const useDeletePrinter = () => {
+export const useRemovePrinter = () => {
   const qc = useQueryClient();
   const { t } = useTranslation();
   const toast = useToasts();
   return useMutation({
-    mutationFn: (serial: string) => api.deletePrinter(serial),
+    mutationFn: (serial: string) => api.removePrinter(serial),
     onSuccess: () => {
       invalidateAll(qc);
-      toast.success(t("printers.notifications.deleted"));
+      toast.success(t("printers.notifications.removed"));
     },
     onError: toast.error
   });

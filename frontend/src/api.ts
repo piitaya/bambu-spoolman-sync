@@ -178,7 +178,7 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(patch)
     }),
-  deletePrinter: (serial: string) =>
+  removePrinter: (serial: string) =>
     req<{ ok: true }>(`/api/printers/${encodeURIComponent(serial)}`, {
       method: "DELETE"
     }),

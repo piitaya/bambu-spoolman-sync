@@ -10,7 +10,7 @@
     "cancel": "Cancel",
     "save": "Save",
     "edit": "Edit",
-    "delete": "Delete",
+    "remove": "Remove",
     "copy": "Copy",
     "copied": "Copied",
     "left_nozzle": "Left nozzle",
@@ -136,10 +136,12 @@
       "enabled": "Enabled",
       "required": "Required"
     },
+    "remove_confirm_title": "Remove printer?",
+    "remove_confirm_body": "\"{{name}}\" will be removed from the list. You can add it back later.",
     "notifications": {
       "added": "Printer added",
       "updated": "Printer updated",
-      "deleted": "Printer deleted",
+      "removed": "Printer removed",
       "duplicate_serial": "A printer with this serial number is already configured."
     }
   },
