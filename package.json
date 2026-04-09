@@ -1,8 +1,11 @@
 {
   "name": "bambu-spoolman-sync",
   "private": true,
-  "version": "0.1.0-beta.2",
-  "workspaces": ["backend", "frontend"],
+  "version": "0.1.0-beta.3",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
     "dev": "npm-run-all -p dev:backend dev:frontend",
     "dev:backend": "npm --workspace backend run dev",
