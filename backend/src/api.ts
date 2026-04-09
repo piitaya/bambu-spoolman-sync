@@ -6,13 +6,16 @@ import {
   saveConfig,
   type Config
 } from "./config.js";
-import { matchSlot } from "./matcher.js";
+import { matchSlot, matchSpool } from "./matcher.js";
+import { SpoolScanSchema } from "./spool.js";
 import { listRuntimes } from "./mqtt.js";
 import {
   createSpoolmanClient,
+  decodeExtraString,
   getSlotSyncView,
   syncAll,
-  syncSlot
+  syncSlot,
+  syncSpool
 } from "./spoolman.js";
 import type { AppContext } from "./server.js";
 
@@ -189,6 +192,61 @@ export async function registerRoutes(
       }
     }
   );
+
+  app.post("/api/spools/scan", async (req, reply) => {
+    const parsed = SpoolScanSchema.safeParse(req.body);
+    if (!parsed.success) {
+      reply.code(400);
+      return { error: zodMessage(parsed.error) };
+    }
+    const spool = parsed.data;
+    const match = matchSpool(spool, ctx.mapping.byId);
+
+    // Enrich with weight data from Spoolman if the spool was
+    // previously synced (looked up by extra.tag === uid).
+    const spoolmanUrl = ctx.config.spoolman?.url;
+    if (spoolmanUrl && spool.uid) {
+      try {
+        const client = createSpoolmanClient(spoolmanUrl);
+        const all = await client.listSpools();
+        const found = all.find(
+          (s) => decodeExtraString(s.extra?.tag) === spool.uid
+        );
+        if (found?.used_weight != null && spool.weight != null) {
+          const total = Number(spool.weight);
+          const remaining = Math.max(0, total - found.used_weight);
+          spool.remain = total > 0 ? Math.round((remaining / total) * 100) : 0;
+        }
+      } catch {
+        // Spoolman unreachable — return spool without weight enrichment
+      }
+    }
+
+    return { spool, match: match.type, sync_available: !!spoolmanUrl };
+  });
+
+  app.post("/api/spools/sync", async (req, reply) => {
+    const parsed = SpoolScanSchema.safeParse(req.body);
+    if (!parsed.success) {
+      reply.code(400);
+      return { error: zodMessage(parsed.error) };
+    }
+    const url = ctx.config.spoolman?.url;
+    if (!url) {
+      reply.code(400);
+      return { error: "Spoolman URL is not configured." };
+    }
+    const spool = parsed.data;
+    try {
+      const result = await syncSpool(spool, ctx.mapping.byId, url, {
+        archiveOnEmpty: ctx.config.spoolman?.archive_on_empty ?? false
+      });
+      return result;
+    } catch (err) {
+      reply.code(400);
+      return { error: err instanceof Error ? err.message : String(err) };
+    }
+  });
 
   app.get("/api/state", async () => {
     const runtimes = listRuntimes(ctx.mqttState);

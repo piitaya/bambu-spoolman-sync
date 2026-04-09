@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Source-agnostic spool and slot types + AMS tray parser.
  */
@@ -30,6 +32,19 @@ export interface AmsUnit {
   slots: AmsSlot[];
 }
 
+export const SpoolScanSchema = z.object({
+  uid: z.string().min(1),
+  variant_id: z.string().nullish().default(null),
+  material: z.string().nullish().default(null),
+  product: z.string().nullish().default(null),
+  color_hex: z.string().nullish().default(null),
+  color_hexes: z.array(z.string()).nullish().default(null),
+  weight: z.string().nullish().default(null),
+  temp_min: z.number().nullish().default(null),
+  temp_max: z.number().nullish().default(null),
+  remain: z.number().nullish().default(null)
+});
+
 /**
  * Parse a raw MQTT tray object into a Spool. Returns null when the
  * tray has no identifiable info (no UID, no variant, no material).
@@ -49,6 +64,13 @@ export function toSpool(tray: unknown): Spool | null {
     !!uid || !!t?.tray_id_name || !!t?.tray_type || !!t?.tray_sub_brands;
   if (!hasInfo) return null;
 
+  // Normalize Bambu sentinels at the boundary:
+  // tray_weight "0" = no NFC tag data, remain -1 = unknown
+  const rawWeight = (t?.tray_weight as string) ?? null;
+  const weight = rawWeight && rawWeight !== "0" ? rawWeight : null;
+  const rawRemain = t?.remain != null ? Number(t.remain) : null;
+  const remain = rawRemain != null && rawRemain >= 0 ? rawRemain : null;
+
   return {
     uid,
     variant_id: (t?.tray_id_name as string) ?? null,
@@ -56,9 +78,9 @@ export function toSpool(tray: unknown): Spool | null {
     product: (t?.tray_sub_brands as string) ?? null,
     color_hex: (t?.tray_color as string) ?? null,
     color_hexes: colorHexes,
-    weight: (t?.tray_weight as string) ?? null,
+    weight,
     temp_min: t?.nozzle_temp_min != null ? Number(t.nozzle_temp_min) : null,
     temp_max: t?.nozzle_temp_max != null ? Number(t.nozzle_temp_max) : null,
-    remain: t?.remain != null ? Number(t.remain) : null
+    remain
   };
 }

@@ -1,6 +1,6 @@
 import type { AppContext } from "./server.js";
 import type { AmsSlot, Spool } from "./spool.js";
-import { matchSpool } from "./matcher.js";
+import { matchSpool, type FilamentEntry } from "./matcher.js";
 import { listRuntimes } from "./mqtt.js";
 
 // Minimum Spoolman types we actually read. The API returns more
@@ -19,6 +19,7 @@ export interface SpoolmanFilament {
 export interface SpoolmanSpool {
   id: number;
   filament: { id: number };
+  used_weight?: number;
   first_used?: string | null;
   last_used?: string | null;
   archived?: boolean;
@@ -115,7 +116,7 @@ export interface SyncOutcome {
   ams_id: number;
   slot_id: number;
   spool_id: number;
-  used_weight: number;
+  used_weight: number | null;
   created_filament: boolean;
   created_spool: boolean;
 }
@@ -172,7 +173,7 @@ export interface SpoolmanClient {
   updateSpool(
     spoolId: number,
     patch: {
-      used_weight: number;
+      used_weight?: number;
       last_used: string;
       first_used?: string;
       archived?: boolean;
@@ -364,7 +365,7 @@ export type SkipReason =
 
 export function evaluateSpoolForSync(
   spool: Spool | null,
-  mapping: Map<string, import("./matcher.js").FilamentEntry>
+  mapping: Map<string, FilamentEntry>
 ):
   | { ok: true; spoolmanId: string; weight: number; usedWeight: number }
   | { ok: false; reason: SkipReason } {
@@ -393,9 +394,9 @@ async function syncOneSpool(
   client: SpoolmanClient,
   spool: Spool,
   spoolmanId: string,
-  usedWeight: number,
+  usedWeight: number | null,
   options: { archiveOnEmpty: boolean }
-): Promise<Omit<SyncOutcome, "printer_serial" | "ams_id" | "slot_id">> {
+): Promise<SpoolSyncResult> {
   let createdFilament = false;
   let filament = await client.findFilamentByExternalId(spoolmanId);
   if (!filament) {
@@ -416,11 +417,8 @@ async function syncOneSpool(
   const now = new Date().toISOString();
   const shouldArchive = options.archiveOnEmpty && spool.remain === 0;
   await client.updateSpool(spoolmanSpool.id, {
-    used_weight: usedWeight,
+    ...(usedWeight != null ? { used_weight: usedWeight } : {}),
     last_used: now,
-    // Backfill for spools that existed before we started tracking
-    // first_used (e.g. created manually in Spoolman). Freshly-created
-    // spools already carry it from createSpool, so this is a no-op.
     ...(spoolmanSpool.first_used ? {} : { first_used: now }),
     ...(shouldArchive ? { archived: true } : {})
   });
@@ -430,6 +428,39 @@ async function syncOneSpool(
     created_filament: createdFilament,
     created_spool: createdSpool
   };
+}
+
+export interface SpoolSyncResult {
+  spool_id: number;
+  used_weight: number | null;
+  created_filament: boolean;
+  created_spool: boolean;
+}
+
+export async function syncSpool(
+  spool: Spool,
+  mapping: Map<string, FilamentEntry>,
+  spoolmanUrl: string,
+  options: { archiveOnEmpty: boolean } = { archiveOnEmpty: false },
+  clientFactory: (url: string) => SpoolmanClient = createSpoolmanClient
+): Promise<SpoolSyncResult> {
+  if (!spool.uid) throw new Error("Spool has no UID.");
+  const match = matchSpool(spool, mapping);
+  if (match.type !== "matched" || !match.entry?.spoolman_id) {
+    throw new Error(`Spool cannot be synced: not_matched.`);
+  }
+  // Compute used weight only when both weight and remain are known
+  // (AMS path). For scans / AMS Lite without weight data, sync
+  // the spool record without updating used_weight.
+  let usedWeight: number | null = null;
+  if (spool.weight != null && spool.remain != null) {
+    const w = Number(spool.weight);
+    if (Number.isFinite(w) && w > 0) {
+      usedWeight = Math.max(0, w * (1 - spool.remain / 100));
+    }
+  }
+  const client = clientFactory(spoolmanUrl);
+  return syncOneSpool(client, spool, match.entry.spoolman_id, usedWeight, options);
 }
 
 function recordSyncSuccess(
