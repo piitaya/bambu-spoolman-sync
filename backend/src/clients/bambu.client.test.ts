@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   classifyMqttError,
   decodeNozzleId,
-  parseAmsReport
-} from "./mqtt.js";
+  parseAmsReport,
+} from "./bambu.client.js";
 
 const mqttErr = (
-  init: { code?: number | string; message?: string }
+  init: { code?: number | string; message?: string },
 ): Error & { code?: number | string } => {
   const e = new Error(init.message ?? "") as Error & {
     code?: number | string;
@@ -35,19 +35,19 @@ describe("parseAmsReport", () => {
                   nozzle_temp_min: 220,
                   nozzle_temp_max: 240,
                   tray_weight: "1000",
-                  remain: 87
+                  remain: 87,
                 },
                 {
                   id: 1,
                   tray_id_name: null,
                   tray_sub_brands: null,
-                  tray_type: null
-                }
-              ]
-            }
-          ]
-        }
-      }
+                  tray_type: null,
+                },
+              ],
+            },
+          ],
+        },
+      },
     };
     const units = parseAmsReport("AC12", payload);
     expect(units).toEqual([
@@ -62,16 +62,16 @@ describe("parseAmsReport", () => {
               uid: "UUID-A",
               variant_id: "A01-B6",
               remain: 87,
-              temp_min: 220
-            })
+              temp_min: 220,
+            }),
           }),
           expect.objectContaining({
             slot_id: 1,
             has_spool: true,
-            spool: null
-          })
-        ]
-      }
+            spool: null,
+          }),
+        ],
+      },
     ]);
   });
 
@@ -83,7 +83,7 @@ describe("parseAmsReport", () => {
 
   it("returns [] when the ams array is empty", () => {
     expect(
-      parseAmsReport("AC12", { print: { ams: { ams: [] } } })
+      parseAmsReport("AC12", { print: { ams: { ams: [] } } }),
     ).toEqual([]);
   });
 
@@ -93,14 +93,14 @@ describe("parseAmsReport", () => {
         ams: {
           ams: [
             { id: 0, tray: [{ id: 0, tray_id_name: "A01-B6" }] },
-            { id: 1, tray: [{ id: 0, tray_id_name: "A01-B7" }] }
-          ]
-        }
-      }
+            { id: 1, tray: [{ id: 0, tray_id_name: "A01-B7" }] },
+          ],
+        },
+      },
     };
     expect(parseAmsReport("AC12", payload)).toEqual([
       expect.objectContaining({ id: 0 }),
-      expect.objectContaining({ id: 1 })
+      expect.objectContaining({ id: 1 }),
     ]);
   });
 
@@ -109,18 +109,18 @@ describe("parseAmsReport", () => {
       print: {
         ams: {
           ams: [
-            { id: 0, info: "1003", tray: [{ id: 0 }] }, // right
-            { id: 1, info: "2003", tray: [{ id: 0 }] }, // right
-            { id: 128, info: "2104", tray: [{ id: 0 }] } // left (HT)
-          ]
-        }
-      }
+            { id: 0, info: "1003", tray: [{ id: 0 }] },
+            { id: 1, info: "2003", tray: [{ id: 0 }] },
+            { id: 128, info: "2104", tray: [{ id: 0 }] },
+          ],
+        },
+      },
     };
     const units = parseAmsReport("AC12", payload);
     expect(units.map((u) => [u.id, u.nozzle_id])).toEqual([
       [0, 0],
       [1, 0],
-      [128, 1]
+      [128, 1],
     ]);
   });
 });
@@ -149,46 +149,53 @@ describe("decodeNozzleId", () => {
 describe("classifyMqttError", () => {
   it("classifies CONNACK code 4 (bad username/password) as unauthorized", () => {
     expect(classifyMqttError(mqttErr({ code: 4, message: "..." }))).toBe(
-      "unauthorized"
+      "unauthorized",
     );
   });
 
   it("classifies CONNACK code 5 (not authorized) as unauthorized", () => {
     expect(classifyMqttError(mqttErr({ code: 5, message: "..." }))).toBe(
-      "unauthorized"
+      "unauthorized",
     );
   });
 
   it("falls back to message regex for 'Not authorized'", () => {
     expect(
-      classifyMqttError(mqttErr({ message: "Connection refused: Not authorized" }))
+      classifyMqttError(
+        mqttErr({ message: "Connection refused: Not authorized" }),
+      ),
     ).toBe("unauthorized");
   });
 
   it("classifies network syscall codes as unreachable", () => {
-    expect(classifyMqttError(mqttErr({ code: "EACCES" }))).toBe("unreachable");
+    expect(classifyMqttError(mqttErr({ code: "EACCES" }))).toBe(
+      "unreachable",
+    );
     expect(classifyMqttError(mqttErr({ code: "ECONNREFUSED" }))).toBe(
-      "unreachable"
+      "unreachable",
     );
     expect(classifyMqttError(mqttErr({ code: "ETIMEDOUT" }))).toBe(
-      "unreachable"
+      "unreachable",
     );
     expect(classifyMqttError(mqttErr({ code: "ENOTFOUND" }))).toBe(
-      "unreachable"
+      "unreachable",
     );
   });
 
   it("falls back to 'connect EXXX' message regex for unreachable", () => {
     expect(
       classifyMqttError(
-        mqttErr({ message: "connect EACCES 10.0.0.0:8883 - Local (10.0.100.1:55326)" })
-      )
+        mqttErr({
+          message:
+            "connect EACCES 10.0.0.0:8883 - Local (10.0.100.1:55326)",
+        }),
+      ),
     ).toBe("unreachable");
   });
 
   it("returns 'other' for unknown errors", () => {
-    expect(classifyMqttError(mqttErr({ message: "weird mystery error" }))).toBe(
-      "other"
-    );
+    expect(
+      classifyMqttError(mqttErr({ message: "weird mystery error" })),
+    ).toBe("other");
   });
 });

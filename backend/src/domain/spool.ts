@@ -1,8 +1,5 @@
-import { z } from "zod";
-
-/**
- * Source-agnostic spool and slot types + AMS tray parser.
- */
+import { Type, type Static } from "@sinclair/typebox";
+import { Value } from "@sinclair/typebox/value";
 
 export interface Spool {
   uid: string | null;
@@ -32,18 +29,29 @@ export interface AmsUnit {
   slots: AmsSlot[];
 }
 
-export const SpoolScanSchema = z.object({
-  uid: z.string().min(1),
-  variant_id: z.string().nullish().default(null),
-  material: z.string().nullish().default(null),
-  product: z.string().nullish().default(null),
-  color_hex: z.string().nullish().default(null),
-  color_hexes: z.array(z.string()).nullish().default(null),
-  weight: z.number().nullish().default(null),
-  temp_min: z.number().nullish().default(null),
-  temp_max: z.number().nullish().default(null),
-  remain: z.number().nullish().default(null)
+export const SpoolScanSchema = Type.Object({
+  uid: Type.String({ minLength: 1 }),
+  variant_id: Type.Union([Type.String(), Type.Null()], { default: null }),
+  material: Type.Union([Type.String(), Type.Null()], { default: null }),
+  product: Type.Union([Type.String(), Type.Null()], { default: null }),
+  color_hex: Type.Union([Type.String(), Type.Null()], { default: null }),
+  color_hexes: Type.Union([Type.Array(Type.String()), Type.Null()], { default: null }),
+  weight: Type.Union([Type.Number(), Type.Null()], { default: null }),
+  temp_min: Type.Union([Type.Number(), Type.Null()], { default: null }),
+  temp_max: Type.Union([Type.Number(), Type.Null()], { default: null }),
+  remain: Type.Union([Type.Number(), Type.Null()], { default: null }),
 });
+export type SpoolScan = Static<typeof SpoolScanSchema>;
+
+export function parseSpoolScan(data: unknown): { success: true; data: SpoolScan } | { success: false; error: string } {
+  const coerced = Value.Default(SpoolScanSchema, data);
+  if (Value.Check(SpoolScanSchema, coerced)) {
+    return { success: true, data: coerced };
+  }
+  const errors = [...Value.Errors(SpoolScanSchema, coerced)];
+  const message = errors.map((e) => e.path ? `${e.path}: ${e.message}` : e.message).join("; ");
+  return { success: false, error: message };
+}
 
 /**
  * Parse a raw MQTT tray object into a Spool. Returns null when the
@@ -81,6 +89,6 @@ export function toSpool(tray: unknown): Spool | null {
     weight,
     temp_min: t?.nozzle_temp_min != null ? Number(t.nozzle_temp_min) : null,
     temp_max: t?.nozzle_temp_max != null ? Number(t.nozzle_temp_max) : null,
-    remain
+    remain,
   };
 }

@@ -1,43 +1,41 @@
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
+import fastifySwagger from "@fastify/swagger";
+import fastifySwaggerUI from "@fastify/swagger-ui";
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { configPath, loadConfig, type Config } from "./config.js";
-import { createMapping, mappingCachePath, type Mapping } from "./mapping.js";
-import { registerRoutes } from "./api.js";
-import {
-  createMqttState,
-  disconnectAll,
-  syncPrinters,
-  type MqttState,
-} from "./mqtt.js";
-import {
-  createSyncStateStore,
-  evaluateSpoolForSync,
-  slotSignature,
-  syncSlot,
-  syncStateKey,
-  type SyncStateStore
-} from "./spoolman.js";
+
+import { configPath, loadConfig } from "./stores/config.store.js";
+import { createMapping, mappingCachePath } from "./stores/mapping.store.js";
+import { AppContext } from "./context.js";
+
+import { configRoutes } from "./routes/config.routes.js";
+import { printerRoutes } from "./routes/printer.routes.js";
+import { mappingRoutes } from "./routes/mapping.routes.js";
+import { spoolmanRoutes } from "./routes/spoolman.routes.js";
+import { spoolRoutes } from "./routes/spool.routes.js";
+import { stateRoutes } from "./routes/state.routes.js";
 
 const MAPPING_SOURCE_URL =
   "https://raw.githubusercontent.com/piitaya/bambu-spoolman-db/main/filaments.json";
 
-export interface AppContext {
-  config: Config;
-  configFilePath: string;
-  mapping: Mapping;
-  mqttState: MqttState;
-  syncState: SyncStateStore;
-  syncFromConfig(): void;
-}
-
 export async function buildApp() {
   const app = Fastify({ logger: true });
-  const configFilePath = configPath();
-  const config = await loadConfig(configFilePath);
 
+  await app.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: "Bambu Spoolman Sync",
+        description: "Sync Bambu Lab AMS spool data with Spoolman",
+        version: "0.1.0",
+      },
+    },
+  });
+  await app.register(fastifySwaggerUI, { routePrefix: "/docs" });
+
+  const cfgPath = configPath();
+  const config = await loadConfig(cfgPath);
   const mapping = await createMapping({
     url: MAPPING_SOURCE_URL,
     cachePath: mappingCachePath(),
@@ -45,83 +43,15 @@ export async function buildApp() {
     onError: (err) => app.log.warn({ err }, "mapping refresh failed"),
   });
 
-  const mqttState = createMqttState();
-  const syncState = createSyncStateStore();
-
-  // Per-slot auto-sync bookkeeping. We track the last-synced tray_uuid
-  // and remain% so we only hit Spoolman when something actually changed,
-  // and debounce by ~2s because the AMS pushes frequent reports while
-  // the printer is busy.
-  const lastSyncSignature = new Map<string, string>();
-  const debounceTimers = new Map<string, NodeJS.Timeout>();
-
-  const ctx: AppContext = {
-    config,
-    configFilePath,
-    mapping,
-    mqttState,
-    syncState,
-    syncFromConfig() {
-      mapping.setInterval(ctx.config.mapping.refresh_interval_hours);
-      syncPrinters(
-        ctx.config.printers,
-        mqttState,
-        (printer, status) =>
-          app.log.info(
-            { serial: printer.serial, name: printer.name, status },
-            "printer status",
-          ),
-        (printer, ams_units) => {
-          if (!ctx.config.spoolman?.auto_sync || !ctx.config.spoolman?.url) {
-            return;
-          }
-          // Trailing-edge debounce with cooldown:
-          //   - If nothing is scheduled and signature differs from the
-          //     last-synced one, schedule a sync in 2s.
-          //   - Subsequent pushes within that window are ignored *if*
-          //     the signature is unchanged; the pending timer still
-          //     fires with the latest data. Previously we were
-          //     clearing and rescheduling on every push, so a chatty
-          //     printer (pushes every <2s) could starve the timer
-          //     indefinitely — meaning auto-sync never ran.
-          for (const unit of ams_units) {
-            for (const slot of unit.slots) {
-              const evaluated = evaluateSpoolForSync(slot.spool, ctx.mapping.byId);
-              if (!evaluated.ok) continue;
-              const key = syncStateKey(printer.serial, slot.ams_id, slot.slot_id);
-              const signature = slotSignature(slot);
-              if (lastSyncSignature.get(key) === signature) continue;
-              if (debounceTimers.has(key)) continue;
-              debounceTimers.set(
-                key,
-                setTimeout(() => {
-                  debounceTimers.delete(key);
-                  lastSyncSignature.set(key, signature);
-                  syncSlot(ctx, printer.serial, slot.ams_id, slot.slot_id).catch(
-                    (err) => {
-                      lastSyncSignature.delete(key);
-                      app.log.warn(
-                        {
-                          err,
-                          serial: printer.serial,
-                          ams: slot.ams_id,
-                          slot: slot.slot_id,
-                        },
-                        "auto-sync failed",
-                      );
-                    },
-                  );
-                }, 2000),
-              );
-            }
-          }
-        },
-      );
-    },
-  };
-
+  const ctx = new AppContext(config, cfgPath, mapping, app.log);
   ctx.syncFromConfig();
-  await registerRoutes(app, ctx);
+
+  await app.register(configRoutes, { ctx });
+  await app.register(printerRoutes, { ctx });
+  await app.register(mappingRoutes, { ctx });
+  await app.register(spoolmanRoutes, { ctx });
+  await app.register(spoolRoutes, { ctx });
+  await app.register(stateRoutes, { ctx });
 
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const frontendDist = resolve(__dirname, "../../frontend/dist");
@@ -140,10 +70,7 @@ export async function buildApp() {
     });
   }
 
-  app.addHook("onClose", async () => {
-    await disconnectAll(mqttState);
-    mapping.stop();
-  });
+  app.addHook("onClose", () => ctx.shutdown());
 
   return { app, ctx };
 }

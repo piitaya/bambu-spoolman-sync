@@ -1,17 +1,17 @@
-import { z } from "zod";
+import { Type, type Static } from "@sinclair/typebox";
 import type { AmsSlot, Spool } from "./spool.js";
 
-export const FilamentEntrySchema = z.object({
-  id: z.string(),
-  code: z.string().optional(),
-  material: z.string().optional(),
-  color_name: z.string().optional(),
-  color_hex: z.string().optional(),
-  spoolman_id: z.string().optional().nullable()
+export const FilamentEntrySchema = Type.Object({
+  id: Type.String(),
+  code: Type.Optional(Type.String()),
+  material: Type.Optional(Type.String()),
+  color_name: Type.Optional(Type.String()),
+  color_hex: Type.Optional(Type.String()),
+  spoolman_id: Type.Optional(Type.Union([Type.String(), Type.Null()])),
 });
-export type FilamentEntry = z.infer<typeof FilamentEntrySchema>;
+export type FilamentEntry = Static<typeof FilamentEntrySchema>;
 
-export const FilamentsFileSchema = z.array(FilamentEntrySchema);
+export const FilamentsFileSchema = Type.Array(FilamentEntrySchema);
 
 export type MatchType =
   | "matched"
@@ -26,12 +26,9 @@ export interface MatchResult {
   entry?: FilamentEntry;
 }
 
-/**
- * Match a spool by variant_id against the community mapping.
- */
 export function matchSpool(
   spool: Spool,
-  mapping: Map<string, FilamentEntry>
+  mapping: Map<string, FilamentEntry>,
 ): MatchResult {
   const hasInfo = !!spool.material || !!spool.variant_id || !!spool.product;
   if (!hasInfo) return { type: "unknown_spool" };
@@ -42,13 +39,9 @@ export function matchSpool(
   return { type: "matched", entry };
 }
 
-/**
- * Match a slot. Empty/no-spool checks at the slot level, then
- * delegates to matchSpool.
- */
 export function matchSlot(
   slot: AmsSlot,
-  mapping: Map<string, FilamentEntry>
+  mapping: Map<string, FilamentEntry>,
 ): MatchResult {
   if (!slot.has_spool) return { type: "empty" };
   if (!slot.spool) return { type: "unknown_spool" };

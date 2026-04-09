@@ -4,7 +4,7 @@ import type { AmsSlot, Spool } from "./spool.js";
 
 const mapping = new Map<string, FilamentEntry>([
   ["A01-B6", { id: "A01-B6", spoolman_id: "bambulab_pla_matte_darkblue" }],
-  ["A18-B0", { id: "A18-B0", spoolman_id: null }]
+  ["A18-B0", { id: "A18-B0", spoolman_id: null }],
 ]);
 
 const spool = (over: Partial<Spool> = {}): Spool => ({
@@ -18,7 +18,7 @@ const spool = (over: Partial<Spool> = {}): Spool => ({
   temp_min: 220,
   temp_max: 240,
   remain: 80,
-  ...over
+  ...over,
 });
 
 const slot = (over?: {
@@ -30,7 +30,7 @@ const slot = (over?: {
   slot_id: 0,
   nozzle_id: 0,
   has_spool: over?.has_spool ?? true,
-  spool: over?.spool !== undefined ? over.spool : spool()
+  spool: over?.spool !== undefined ? over.spool : spool(),
 });
 
 describe("matchSpool", () => {
@@ -53,7 +53,7 @@ describe("matchSpool", () => {
   it("returns third_party when variant_id is missing but other fields exist", () => {
     const r = matchSpool(
       spool({ variant_id: null, product: "Generic PLA" }),
-      mapping
+      mapping,
     );
     expect(r.type).toBe("third_party");
   });
@@ -61,7 +61,7 @@ describe("matchSpool", () => {
   it("returns unknown_spool when no info at all", () => {
     const r = matchSpool(
       spool({ variant_id: null, material: null, product: null }),
-      mapping
+      mapping,
     );
     expect(r.type).toBe("unknown_spool");
   });
@@ -73,7 +73,9 @@ describe("matchSlot", () => {
   });
 
   it("returns unknown_spool when spool is present but has no data", () => {
-    expect(matchSlot(slot({ spool: null, has_spool: true }), mapping).type).toBe("unknown_spool");
+    expect(
+      matchSlot(slot({ spool: null, has_spool: true }), mapping).type,
+    ).toBe("unknown_spool");
   });
 
   it("delegates to matchSpool when spool exists", () => {
@@ -82,8 +84,10 @@ describe("matchSlot", () => {
 
   it("does not try to match by color or name", () => {
     const r = matchSlot(
-      slot({ spool: spool({ variant_id: "A01-B7", color_hex: "042F56FF" }) }),
-      mapping
+      slot({
+        spool: spool({ variant_id: "A01-B7", color_hex: "042F56FF" }),
+      }),
+      mapping,
     );
     expect(r.type).toBe("unknown_variant");
   });

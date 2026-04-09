@@ -1,10 +1,11 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { Value } from "@sinclair/typebox/value";
 import {
   FilamentsFileSchema,
-  type FilamentEntry
-} from "./matcher.js";
-import { dataDir } from "./config.js";
+  type FilamentEntry,
+} from "../domain/matcher.js";
+import { dataDir } from "./config.store.js";
 
 export interface MappingOptions {
   url: string;
@@ -25,11 +26,6 @@ export function mappingCachePath(): string {
   return resolve(dataDir(), "filaments.json");
 }
 
-/**
- * Creates a filament-mapping holder. On start, it loads any cached
- * filaments.json, then either immediately refetches (if the cache is
- * missing or stale) or schedules a refetch after the remaining TTL.
- */
 export async function createMapping(opts: MappingOptions): Promise<Mapping> {
   let byId = new Map<string, FilamentEntry>();
   let fetchedAt: Date | null = null;
@@ -37,9 +33,11 @@ export async function createMapping(opts: MappingOptions): Promise<Mapping> {
   let timer: NodeJS.Timeout | null = null;
 
   const parseAndSet = (raw: unknown) => {
-    const parsed = FilamentsFileSchema.parse(raw);
-    byId = new Map(parsed.map((e) => [e.id, e]));
-    return parsed.length;
+    if (!Value.Check(FilamentsFileSchema, raw)) {
+      throw new Error("Invalid filaments data");
+    }
+    byId = new Map(raw.map((e) => [e.id, e]));
+    return raw.length;
   };
 
   const loadCache = async (): Promise<Date | null> => {
@@ -110,6 +108,6 @@ export async function createMapping(opts: MappingOptions): Promise<Mapping> {
     stop() {
       if (timer) clearInterval(timer);
       timer = null;
-    }
+    },
   };
 }

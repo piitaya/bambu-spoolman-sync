@@ -2,36 +2,34 @@ import { describe, expect, it } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ConfigSchema, loadConfig, saveConfig } from "./config.js";
+import { loadConfig, saveConfig } from "./config.store.js";
+import { Value } from "@sinclair/typebox/value";
+import { ConfigSchema } from "./config.store.js";
 
 describe("ConfigSchema", () => {
   it("applies defaults to an empty object", () => {
-    const c = ConfigSchema.parse({});
+    const coerced = Value.Default(ConfigSchema, {});
+    Value.Clean(ConfigSchema, coerced);
+    expect(Value.Check(ConfigSchema, coerced)).toBe(true);
+    const c = coerced as any;
     expect(c.printers).toEqual([]);
     expect(c.mapping.refresh_interval_hours).toBe(24);
   });
 
   it("rejects a printer missing required fields", () => {
-    expect(() =>
-      ConfigSchema.parse({
-        printers: [{ name: "x" }]
-      })
-    ).toThrow();
+    expect(
+      Value.Check(ConfigSchema, { printers: [{ name: "x" }] }),
+    ).toBe(false);
   });
 
   it("rejects a printer with an empty serial", () => {
-    expect(() =>
-      ConfigSchema.parse({
+    expect(
+      Value.Check(ConfigSchema, {
         printers: [
-          {
-            name: "x",
-            host: "1.2.3.4",
-            serial: "",
-            access_code: "abc"
-          }
-        ]
-      })
-    ).toThrow();
+          { name: "x", host: "1.2.3.4", serial: "", access_code: "abc" },
+        ],
+      }),
+    ).toBe(false);
   });
 });
 
@@ -57,12 +55,10 @@ describe("loadConfig / saveConfig", () => {
             host: "10.0.0.1",
             serial: "AC12",
             access_code: "xxx",
-            enabled: true
-          }
+            enabled: true,
+          },
         ],
-        mapping: {
-          refresh_interval_hours: 12
-        }
+        mapping: { refresh_interval_hours: 12 },
       });
       expect(written.printers).toHaveLength(1);
       const read = await loadConfig(path);
