@@ -15,10 +15,10 @@ import {
   IconRefresh
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { SlotDetailModal } from "./SlotDetailModal";
+import { AmsSlotDetailModal } from "./AmsSlotDetailModal";
 import { useMatchStatus } from "./matchStatus";
 import { useConfig, useSyncSlotSpoolman } from "../hooks";
-import type { MatchedSlot, SlotSyncView } from "../api";
+import type { AmsMatchedSlot, SlotSyncView } from "../api";
 
 function SyncIndicator({ sync }: { sync: SlotSyncView }) {
   const color =
@@ -94,7 +94,7 @@ function swatchFill(hex: string | null | undefined): string | null {
   return `#${hex.slice(0, 6)}`;
 }
 
-export function slotKey(s: MatchedSlot): string {
+export function amsSlotKey(s: AmsMatchedSlot): string {
   return `${s.slot.printer_serial}/${s.slot.ams_id}/${s.slot.slot_id}`;
 }
 
@@ -178,7 +178,7 @@ function SlotFill({
   );
 }
 
-export function SlotCard({ s }: { s: MatchedSlot }) {
+export function AmsSlotCard({ s }: { s: AmsMatchedSlot }) {
   const isEmpty = s.type === "empty";
   const isUnknownSpool = s.type === "unknown_spool";
   const [opened, { open, close }] = useDisclosure(false);
@@ -195,9 +195,10 @@ export function SlotCard({ s }: { s: MatchedSlot }) {
   // When we have a mapped color name, promote it to the headline and
   // push the material to the secondary line. Otherwise fall back to
   // the raw MQTT fields (material headline, RFID id as secondary).
+  const sp = s.slot.spool;
   const colorName = s.entry?.color_name;
   const material =
-    s.slot.tray_sub_brands?.trim() || s.slot.tray_type?.trim() || null;
+    sp?.product?.trim() || sp?.material?.trim() || null;
   const headline = isEmpty
     ? t("slot.no_spool_loaded")
     : isUnknownSpool
@@ -208,9 +209,9 @@ export function SlotCard({ s }: { s: MatchedSlot }) {
       ? null
       : colorName
         ? material
-        : s.slot.tray_id_name;
+        : sp?.variant_id;
 
-  const totalGrams = s.slot.tray_weight ? Number(s.slot.tray_weight) : null;
+  const totalGrams = sp?.weight ? Number(sp.weight) : null;
   const totalGramsValid =
     totalGrams != null && Number.isFinite(totalGrams) && totalGrams > 0
       ? totalGrams
@@ -253,7 +254,7 @@ export function SlotCard({ s }: { s: MatchedSlot }) {
         </Group>
         <Stack gap="sm">
           <Group gap="sm" align="flex-start" wrap="nowrap">
-            <ColorSwatch hex={isEmpty || isUnknownSpool ? null : s.slot.tray_color} />
+            <ColorSwatch hex={isEmpty || isUnknownSpool ? null : sp?.color_hex} />
             <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
               <Text
                 size="sm"
@@ -271,15 +272,15 @@ export function SlotCard({ s }: { s: MatchedSlot }) {
           <SlotFill
             totalGrams={isEmpty || isUnknownSpool ? null : totalGramsValid}
             remainPct={
-              isEmpty || isUnknownSpool || s.slot.remain == null || s.slot.remain < 0
+              isEmpty || isUnknownSpool || sp?.remain == null || sp.remain < 0
                 ? null
-                : s.slot.remain
+                : sp.remain
             }
           />
         </Stack>
       </Card>
       {!isEmpty && (
-        <SlotDetailModal slot={s} opened={opened} onClose={close} />
+        <AmsSlotDetailModal slot={s} opened={opened} onClose={close} />
       )}
     </>
   );

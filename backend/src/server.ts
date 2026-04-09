@@ -14,8 +14,10 @@ import {
 } from "./mqtt.js";
 import {
   createSyncStateStore,
-  evaluateSlotForSync,
+  evaluateSpoolForSync,
+  slotSignature,
   syncSlot,
+  syncStateKey,
   type SyncStateStore
 } from "./spoolman.js";
 
@@ -50,10 +52,8 @@ export async function buildApp() {
   // and remain% so we only hit Spoolman when something actually changed,
   // and debounce by ~2s because the AMS pushes frequent reports while
   // the printer is busy.
-  const lastSyncKey = new Map<string, string>();
+  const lastSyncSignature = new Map<string, string>();
   const debounceTimers = new Map<string, NodeJS.Timeout>();
-  const slotKey = (serial: string, amsId: number, slotId: number) =>
-    `${serial}#${amsId}#${slotId}`;
 
   const ctx: AppContext = {
     config,
@@ -71,7 +71,7 @@ export async function buildApp() {
             { serial: printer.serial, name: printer.name, status },
             "printer status",
           ),
-        (printer, slots) => {
+        (printer, ams_units) => {
           if (!ctx.config.spoolman?.auto_sync || !ctx.config.spoolman?.url) {
             return;
           }
@@ -84,35 +84,36 @@ export async function buildApp() {
           //     clearing and rescheduling on every push, so a chatty
           //     printer (pushes every <2s) could starve the timer
           //     indefinitely — meaning auto-sync never ran.
-          for (const slot of slots) {
-            const evaluated = evaluateSlotForSync(slot, ctx.mapping.byId);
-            if (!evaluated.ok) continue;
-            const key = slotKey(printer.serial, slot.ams_id, slot.slot_id);
-            const signature = `${slot.tray_uuid}|${slot.remain}`;
-            if (lastSyncKey.get(key) === signature) continue;
-            if (debounceTimers.has(key)) continue;
-            debounceTimers.set(
-              key,
-              setTimeout(() => {
-                debounceTimers.delete(key);
-                lastSyncKey.set(key, signature);
-                syncSlot(ctx, printer.serial, slot.ams_id, slot.slot_id).catch(
-                  (err) => {
-                    // Clear the memo on failure so the next push retries.
-                    lastSyncKey.delete(key);
-                    app.log.warn(
-                      {
-                        err,
-                        serial: printer.serial,
-                        ams: slot.ams_id,
-                        slot: slot.slot_id,
-                      },
-                      "auto-sync failed",
-                    );
-                  },
-                );
-              }, 2000),
-            );
+          for (const unit of ams_units) {
+            for (const slot of unit.slots) {
+              const evaluated = evaluateSpoolForSync(slot.spool, ctx.mapping.byId);
+              if (!evaluated.ok) continue;
+              const key = syncStateKey(printer.serial, slot.ams_id, slot.slot_id);
+              const signature = slotSignature(slot);
+              if (lastSyncSignature.get(key) === signature) continue;
+              if (debounceTimers.has(key)) continue;
+              debounceTimers.set(
+                key,
+                setTimeout(() => {
+                  debounceTimers.delete(key);
+                  lastSyncSignature.set(key, signature);
+                  syncSlot(ctx, printer.serial, slot.ams_id, slot.slot_id).catch(
+                    (err) => {
+                      lastSyncSignature.delete(key);
+                      app.log.warn(
+                        {
+                          err,
+                          serial: printer.serial,
+                          ams: slot.ams_id,
+                          slot: slot.slot_id,
+                        },
+                        "auto-sync failed",
+                      );
+                    },
+                  );
+                }, 2000),
+              );
+            }
           }
         },
       );

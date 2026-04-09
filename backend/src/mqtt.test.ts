@@ -16,7 +16,7 @@ const mqttErr = (
 };
 
 describe("parseAmsReport", () => {
-  it("flattens ams[].tray[] into a slot list", () => {
+  it("parses ams[].tray[] into nested AmsUnit[]", () => {
     const payload = {
       print: {
         ams: {
@@ -49,29 +49,42 @@ describe("parseAmsReport", () => {
         }
       }
     };
-    const slots = parseAmsReport("AC12", payload);
-    expect(slots).toHaveLength(2);
-    expect(slots[0]).toMatchObject({
-      printer_serial: "AC12",
-      ams_id: 0,
-      nozzle_id: 0,
-      slot_id: 0,
-      tray_id_name: "A01-B6",
-      remain: 87,
-      nozzle_temp_min: 220
-    });
-    expect(slots[1]).toMatchObject({
-      slot_id: 1,
-      tray_id_name: null,
-      remain: null,
-      nozzle_id: 0
-    });
+    const units = parseAmsReport("AC12", payload);
+    expect(units).toEqual([
+      {
+        id: 0,
+        nozzle_id: 0,
+        slots: [
+          expect.objectContaining({
+            slot_id: 0,
+            has_spool: true,
+            spool: expect.objectContaining({
+              uid: "UUID-A",
+              variant_id: "A01-B6",
+              remain: 87,
+              temp_min: 220
+            })
+          }),
+          expect.objectContaining({
+            slot_id: 1,
+            has_spool: true,
+            spool: null
+          })
+        ]
+      }
+    ]);
   });
 
   it("returns [] when the payload has no ams report", () => {
     expect(parseAmsReport("AC12", {})).toEqual([]);
     expect(parseAmsReport("AC12", { print: {} })).toEqual([]);
     expect(parseAmsReport("AC12", null)).toEqual([]);
+  });
+
+  it("returns [] when the ams array is empty", () => {
+    expect(
+      parseAmsReport("AC12", { print: { ams: { ams: [] } } })
+    ).toEqual([]);
   });
 
   it("handles multiple AMS units", () => {
@@ -85,10 +98,10 @@ describe("parseAmsReport", () => {
         }
       }
     };
-    const slots = parseAmsReport("AC12", payload);
-    expect(slots).toHaveLength(2);
-    expect(slots[0].ams_id).toBe(0);
-    expect(slots[1].ams_id).toBe(1);
+    expect(parseAmsReport("AC12", payload)).toEqual([
+      expect.objectContaining({ id: 0 }),
+      expect.objectContaining({ id: 1 })
+    ]);
   });
 
   it("decodes nozzle_id from the AMS info hex field on an H2C-shaped payload", () => {
@@ -103,8 +116,8 @@ describe("parseAmsReport", () => {
         }
       }
     };
-    const slots = parseAmsReport("AC12", payload);
-    expect(slots.map((s) => [s.ams_id, s.nozzle_id])).toEqual([
+    const units = parseAmsReport("AC12", payload);
+    expect(units.map((u) => [u.id, u.nozzle_id])).toEqual([
       [0, 0],
       [1, 0],
       [128, 1]

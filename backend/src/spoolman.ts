@@ -1,5 +1,6 @@
 import type { AppContext } from "./server.js";
-import { matchSlot, type AMSSlot } from "./matcher.js";
+import type { AmsSlot, Spool } from "./spool.js";
+import { matchSpool } from "./matcher.js";
 import { listRuntimes } from "./mqtt.js";
 
 // Minimum Spoolman types we actually read. The API returns more
@@ -78,8 +79,8 @@ export function syncStateKey(
   return `${serial}#${amsId}#${slotId}`;
 }
 
-function slotSignature(slot: AMSSlot): string {
-  return `${slot.tray_uuid ?? ""}|${slot.remain ?? ""}`;
+export function slotSignature(slot: AmsSlot): string {
+  return `${slot.spool?.uid ?? ""}|${slot.spool?.remain ?? ""}`;
 }
 
 // Public view of a slot's sync state. "stale" is derived on read: if
@@ -93,7 +94,7 @@ export type SlotSyncView =
 
 export function getSlotSyncView(
   store: SyncStateStore,
-  slot: AMSSlot
+  slot: AmsSlot
 ): SlotSyncView {
   const entry = store.get(
     syncStateKey(slot.printer_serial, slot.ams_id, slot.slot_id)
@@ -356,39 +357,41 @@ export function createSpoolmanClient(
 // expected and silent.
 export type SkipReason =
   | "not_matched"
-  | "missing_tray_uuid"
+  | "no_spool"
+  | "missing_uid"
   | "missing_weight"
   | "missing_remain";
 
-export function evaluateSlotForSync(
-  slot: AMSSlot,
+export function evaluateSpoolForSync(
+  spool: Spool | null,
   mapping: Map<string, import("./matcher.js").FilamentEntry>
 ):
-  | { ok: true; spoolmanId: string; trayWeight: number; usedWeight: number }
+  | { ok: true; spoolmanId: string; weight: number; usedWeight: number }
   | { ok: false; reason: SkipReason } {
-  const match = matchSlot(slot, mapping);
+  if (!spool) return { ok: false, reason: "no_spool" };
+  const match = matchSpool(spool, mapping);
   if (match.type !== "matched" || !match.entry?.spoolman_id) {
     return { ok: false, reason: "not_matched" };
   }
-  if (!slot.tray_uuid) return { ok: false, reason: "missing_tray_uuid" };
-  if (slot.tray_weight == null) return { ok: false, reason: "missing_weight" };
-  if (slot.remain == null) return { ok: false, reason: "missing_remain" };
-  const trayWeight = Number(slot.tray_weight);
-  if (!Number.isFinite(trayWeight) || trayWeight <= 0) {
+  if (!spool.uid) return { ok: false, reason: "missing_uid" };
+  if (spool.weight == null) return { ok: false, reason: "missing_weight" };
+  if (spool.remain == null) return { ok: false, reason: "missing_remain" };
+  const weight = Number(spool.weight);
+  if (!Number.isFinite(weight) || weight <= 0) {
     return { ok: false, reason: "missing_weight" };
   }
-  const usedWeight = Math.max(0, trayWeight * (1 - slot.remain / 100));
+  const usedWeight = Math.max(0, weight * (1 - spool.remain / 100));
   return {
     ok: true,
     spoolmanId: match.entry.spoolman_id,
-    trayWeight,
+    weight,
     usedWeight
   };
 }
 
-async function syncOneSlot(
+async function syncOneSpool(
   client: SpoolmanClient,
-  slot: AMSSlot,
+  spool: Spool,
   spoolmanId: string,
   usedWeight: number,
   options: { archiveOnEmpty: boolean }
@@ -400,33 +403,55 @@ async function syncOneSlot(
     createdFilament = true;
   }
 
-  const trayUuid = slot.tray_uuid!;
-  const spools = await client.listSpools();
-  let spool =
-    spools.find((s) => decodeExtraString(s.extra?.tag) === trayUuid) ?? null;
+  const uid = spool.uid!;
+  const spoolmanSpools = await client.listSpools();
+  let spoolmanSpool =
+    spoolmanSpools.find((s) => decodeExtraString(s.extra?.tag) === uid) ?? null;
   let createdSpool = false;
-  if (!spool) {
-    spool = await client.createSpool(filament.id, trayUuid);
+  if (!spoolmanSpool) {
+    spoolmanSpool = await client.createSpool(filament.id, uid);
     createdSpool = true;
   }
 
   const now = new Date().toISOString();
-  const shouldArchive = options.archiveOnEmpty && slot.remain === 0;
-  await client.updateSpool(spool.id, {
+  const shouldArchive = options.archiveOnEmpty && spool.remain === 0;
+  await client.updateSpool(spoolmanSpool.id, {
     used_weight: usedWeight,
     last_used: now,
     // Backfill for spools that existed before we started tracking
     // first_used (e.g. created manually in Spoolman). Freshly-created
     // spools already carry it from createSpool, so this is a no-op.
-    ...(spool.first_used ? {} : { first_used: now }),
+    ...(spoolmanSpool.first_used ? {} : { first_used: now }),
     ...(shouldArchive ? { archived: true } : {})
   });
   return {
-    spool_id: spool.id,
+    spool_id: spoolmanSpool.id,
     used_weight: usedWeight,
     created_filament: createdFilament,
     created_spool: createdSpool
   };
+}
+
+function recordSyncSuccess(
+  ctx: AppContext, key: string, slot: AmsSlot, spoolId: number
+): void {
+  ctx.syncState.set(key, {
+    status: "synced",
+    at: new Date().toISOString(),
+    signature: slotSignature(slot),
+    spool_id: spoolId
+  });
+}
+
+function recordSyncError(
+  ctx: AppContext, key: string, slot: AmsSlot, error: string
+): void {
+  ctx.syncState.set(key, {
+    status: "error",
+    at: new Date().toISOString(),
+    signature: slotSignature(slot),
+    error
+  });
 }
 
 function findSlot(
@@ -434,15 +459,14 @@ function findSlot(
   printerSerial: string,
   amsId: number,
   slotId: number
-): AMSSlot | null {
+): AmsSlot | null {
   const runtime = listRuntimes(ctx.mqttState).find(
     (r) => r.printer.serial === printerSerial
   );
   if (!runtime) return null;
-  return (
-    runtime.slots.find((s) => s.ams_id === amsId && s.slot_id === slotId) ??
-    null
-  );
+  const unit = runtime.ams_units.find((u) => u.id === amsId);
+  if (!unit) return null;
+  return unit.slots.find((s) => s.slot_id === slotId) ?? null;
 }
 
 export async function syncSlot(
@@ -461,26 +485,21 @@ export async function syncSlot(
       `Slot ${amsId}/${slotId} on printer ${printerSerial} is not available.`
     );
   }
-  const evaluated = evaluateSlotForSync(slot, ctx.mapping.byId);
+  const evaluated = evaluateSpoolForSync(slot.spool, ctx.mapping.byId);
   if (!evaluated.ok) {
     throw new Error(`Slot cannot be synced: ${evaluated.reason}.`);
   }
   const key = syncStateKey(printerSerial, amsId, slotId);
   try {
     const client = clientFactory(url);
-    const outcome = await syncOneSlot(
+    const outcome = await syncOneSpool(
       client,
-      slot,
+      slot.spool!,
       evaluated.spoolmanId,
       evaluated.usedWeight,
       { archiveOnEmpty: ctx.config.spoolman?.archive_on_empty ?? false }
     );
-    ctx.syncState.set(key, {
-      status: "synced",
-      at: new Date().toISOString(),
-      signature: slotSignature(slot),
-      spool_id: outcome.spool_id
-    });
+    recordSyncSuccess(ctx, key, slot, outcome.spool_id);
     return {
       printer_serial: printerSerial,
       ams_id: amsId,
@@ -488,12 +507,9 @@ export async function syncSlot(
       ...outcome
     };
   } catch (err) {
-    ctx.syncState.set(key, {
-      status: "error",
-      at: new Date().toISOString(),
-      signature: slotSignature(slot),
-      error: err instanceof Error ? err.message : String(err)
-    });
+    recordSyncError(
+      ctx, key, slot, err instanceof Error ? err.message : String(err)
+    );
     throw err;
   }
 }
@@ -511,56 +527,48 @@ export async function syncAll(
 
   const result: SyncAllResult = { synced: [], skipped: [], errors: [] };
   for (const runtime of listRuntimes(ctx.mqttState)) {
-    for (const slot of runtime.slots) {
-      const evaluated = evaluateSlotForSync(slot, ctx.mapping.byId);
-      if (!evaluated.ok) {
-        result.skipped.push({
-          printer_serial: runtime.printer.serial,
-          ams_id: slot.ams_id,
-          slot_id: slot.slot_id,
-          reason: evaluated.reason
-        });
-        continue;
-      }
-      const key = syncStateKey(
-        runtime.printer.serial,
-        slot.ams_id,
-        slot.slot_id
-      );
-      try {
-        const outcome = await syncOneSlot(
-          client,
-          slot,
-          evaluated.spoolmanId,
-          evaluated.usedWeight,
-          options
+    for (const unit of runtime.ams_units) {
+      for (const slot of unit.slots) {
+        const evaluated = evaluateSpoolForSync(slot.spool, ctx.mapping.byId);
+        if (!evaluated.ok) {
+          result.skipped.push({
+            printer_serial: runtime.printer.serial,
+            ams_id: slot.ams_id,
+            slot_id: slot.slot_id,
+            reason: evaluated.reason
+          });
+          continue;
+        }
+        const key = syncStateKey(
+          runtime.printer.serial,
+          slot.ams_id,
+          slot.slot_id
         );
-        ctx.syncState.set(key, {
-          status: "synced",
-          at: new Date().toISOString(),
-          signature: slotSignature(slot),
-          spool_id: outcome.spool_id
-        });
-        result.synced.push({
-          printer_serial: runtime.printer.serial,
-          ams_id: slot.ams_id,
-          slot_id: slot.slot_id,
-          ...outcome
-        });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        ctx.syncState.set(key, {
-          status: "error",
-          at: new Date().toISOString(),
-          signature: slotSignature(slot),
-          error: message
-        });
-        result.errors.push({
-          printer_serial: runtime.printer.serial,
-          ams_id: slot.ams_id,
-          slot_id: slot.slot_id,
-          error: message
-        });
+        try {
+          const outcome = await syncOneSpool(
+            client,
+            slot.spool!,
+            evaluated.spoolmanId,
+            evaluated.usedWeight,
+            options
+          );
+          recordSyncSuccess(ctx, key, slot, outcome.spool_id);
+          result.synced.push({
+            printer_serial: runtime.printer.serial,
+            ams_id: slot.ams_id,
+            slot_id: slot.slot_id,
+            ...outcome
+          });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          recordSyncError(ctx, key, slot, message);
+          result.errors.push({
+            printer_serial: runtime.printer.serial,
+            ams_id: slot.ams_id,
+            slot_id: slot.slot_id,
+            error: message
+          });
+        }
       }
     }
   }

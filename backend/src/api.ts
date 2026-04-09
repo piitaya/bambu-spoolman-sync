@@ -195,17 +195,22 @@ export async function registerRoutes(
     const bySerial = new Map(runtimes.map((r) => [r.printer.serial, r]));
     const printers = ctx.config.printers.map((p) => {
       const runtime = bySerial.get(p.serial);
-      const slots = (runtime?.slots ?? []).map((slot) => ({
-        slot,
-        ...matchSlot(slot, ctx.mapping.byId),
-        sync: getSlotSyncView(ctx.syncState, slot)
+      const ams_units = (runtime?.ams_units ?? []).map((unit) => ({
+        id: unit.id,
+        nozzle_id: unit.nozzle_id,
+        slots: unit.slots.map((slot) => ({
+          slot,
+          ...matchSlot(slot, ctx.mapping.byId),
+          sync: getSlotSyncView(ctx.syncState, slot)
+        }))
       }));
+
       return {
         serial: p.serial,
         name: p.name,
         enabled: p.enabled,
         status: runtime?.status ?? { lastError: null, errorCode: null },
-        slots
+        ams_units
       };
     });
 

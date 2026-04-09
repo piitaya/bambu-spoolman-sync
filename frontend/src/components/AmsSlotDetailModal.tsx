@@ -19,14 +19,14 @@ import {
   IconRefresh
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { amsLabel } from "./AmsBlock";
+import { amsLabel } from "./amsLabel";
 import { useMatchStatus } from "./matchStatus";
 import {
   useConfig,
   useSpoolmanBaseUrl,
   useSyncSlotSpoolman
 } from "../hooks";
-import type { MatchedSlot } from "../api";
+import type { AmsMatchedSlot } from "../api";
 
 function Row({
   label,
@@ -100,12 +100,12 @@ function CopyableMono({ value }: { value: string }) {
   );
 }
 
-export function SlotDetailModal({
+export function AmsSlotDetailModal({
   slot,
   opened,
   onClose
 }: {
-  slot: MatchedSlot;
+  slot: AmsMatchedSlot;
   opened: boolean;
   onClose: () => void;
 }) {
@@ -128,9 +128,10 @@ export function SlotDetailModal({
           ? "var(--mantine-color-red-6)"
           : "var(--mantine-color-gray-5)";
   const s = slot.slot;
+  const sp = s.spool;
   const slotName = t("slot.label", { n: s.slot_id + 1 });
   const title = `${amsLabel(s.ams_id)} · ${slotName}`;
-  const hasTemp = s.nozzle_temp_min != null || s.nozzle_temp_max != null;
+  const hasTemp = sp?.temp_min != null || sp?.temp_max != null;
   const status = matchStatus[slot.type];
   const isMobile = useMediaQuery("(max-width: 48em)") ?? false;
 
@@ -164,10 +165,10 @@ export function SlotDetailModal({
             )}
             {(() => {
               const swatches =
-                s.tray_colors && s.tray_colors.length > 0
-                  ? s.tray_colors
-                  : s.tray_color
-                    ? [s.tray_color]
+                sp?.color_hexes && sp?.color_hexes.length > 0
+                  ? sp?.color_hexes
+                  : sp?.color_hex
+                    ? [sp?.color_hex]
                     : [];
               if (swatches.length === 0) return null;
               const multi = swatches.length > 1;
@@ -214,18 +215,18 @@ export function SlotDetailModal({
               label={t("slot.fields.material")}
               value={
                 <Plain>
-                  {s.tray_sub_brands?.trim() ||
-                    s.tray_type?.trim() ||
+                  {sp?.product?.trim() ||
+                    sp?.material?.trim() ||
                     "—"}
                 </Plain>
               }
             />
 
             <SectionHeader label={t("slot.sections.identification")} />
-            {s.tray_id_name && (
+            {sp?.variant_id && (
               <Row
                 label={t("slot.fields.bambu_filament")}
-                value={<CopyableMono value={s.tray_id_name} />}
+                value={<CopyableMono value={sp?.variant_id} />}
               />
             )}
             {slot.entry?.spoolman_id && (
@@ -234,16 +235,16 @@ export function SlotDetailModal({
                 value={<CopyableMono value={slot.entry.spoolman_id} />}
               />
             )}
-            {s.tray_uuid && (
+            {sp?.uid && (
               <Row
                 label={t("slot.fields.spool_uid")}
-                value={<CopyableMono value={s.tray_uuid} />}
+                value={<CopyableMono value={sp?.uid} />}
               />
             )}
 
             <SectionHeader label={t("slot.sections.physical")} />
             {(() => {
-              const w = s.tray_weight ? Number(s.tray_weight) : NaN;
+              const w = sp?.weight ? Number(sp?.weight) : NaN;
               if (!Number.isFinite(w) || w <= 0) return null;
               return (
                 <Row
@@ -252,10 +253,10 @@ export function SlotDetailModal({
                 />
               );
             })()}
-            {s.remain != null && s.remain >= 0 && (
+            {sp?.remain != null && sp?.remain >= 0 && (
               <Row
                 label={t("slot.fields.remaining")}
-                value={<Plain>{s.remain}%</Plain>}
+                value={<Plain>{sp?.remain}%</Plain>}
               />
             )}
             {hasTemp && (
@@ -263,7 +264,7 @@ export function SlotDetailModal({
                 label={t("slot.fields.nozzle_temp")}
                 value={
                   <Plain>
-                    {s.nozzle_temp_min ?? "—"} – {s.nozzle_temp_max ?? "—"} °C
+                    {sp?.temp_min ?? "—"} – {sp?.temp_max ?? "—"} °C
                   </Plain>
                 }
               />

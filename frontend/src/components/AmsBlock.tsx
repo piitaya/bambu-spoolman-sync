@@ -1,30 +1,8 @@
 import { Badge, Group, SimpleGrid, Stack, Title } from "@mantine/core";
 import { useTranslation } from "react-i18next";
-import { SlotCard, slotKey } from "./SlotCard";
-import type { MatchedSlot } from "../api";
-
-export interface AmsGroup {
-  id: number;
-  label: string;
-  /** 0 = right, 1 = left, null = single-nozzle (no badge). */
-  nozzleId: number | null;
-  slots: MatchedSlot[];
-}
-
-/**
- * Label an AMS by its raw `id`, bambuddy-style:
- *   0..3   → "AMS A", "AMS B", "AMS C", "AMS D"
- *   128..  → "AMS HT-A", "AMS HT-B", … (up to 8 HTs)
- *
- * The "AMS" prefix is intentionally not localized — it's a Bambu
- * product name, not a translatable noun.
- */
-export function amsLabel(id: number): string {
-  if (id >= 128) {
-    return `AMS HT-${String.fromCharCode(65 + (id - 128))}`;
-  }
-  return `AMS ${String.fromCharCode(65 + id)}`;
-}
+import { amsLabel } from "./amsLabel";
+import { AmsSlotCard, amsSlotKey } from "./AmsSlotCard";
+import type { AmsUnit } from "../api";
 
 function NozzleBadge({ nozzleId }: { nozzleId: number | null }) {
   const { t } = useTranslation();
@@ -39,18 +17,18 @@ function NozzleBadge({ nozzleId }: { nozzleId: number | null }) {
   );
 }
 
-export function AmsBlock({ group }: { group: AmsGroup }) {
+export function AmsBlock({ ams }: { ams: AmsUnit }) {
   return (
     <Stack gap="xs">
       <Group gap="xs" align="center">
         <Title order={5} c="dimmed" tt="uppercase" fz="xs">
-          {group.label}
+          {amsLabel(ams.id)}
         </Title>
-        <NozzleBadge nozzleId={group.nozzleId} />
+        <NozzleBadge nozzleId={ams.nozzle_id} />
       </Group>
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
-        {group.slots.map((s) => (
-          <SlotCard key={slotKey(s)} s={s} />
+        {ams.slots.map((s) => (
+          <AmsSlotCard key={amsSlotKey(s)} s={s} />
         ))}
       </SimpleGrid>
     </Stack>

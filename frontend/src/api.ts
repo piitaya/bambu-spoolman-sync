@@ -51,23 +51,26 @@ export interface SyncAllResult {
   }>;
 }
 
-export interface AMSSlotData {
+export interface Spool {
+  uid: string | null;
+  variant_id: string | null;
+  material: string | null;
+  product: string | null;
+  color_hex: string | null;
+  color_hexes: string[] | null;
+  weight: string | null;
+  temp_min: number | null;
+  temp_max: number | null;
+  remain: number | null;
+}
+
+export interface AmsSlot {
   printer_serial: string;
   ams_id: number;
-  /** 0 = right, 1 = left, null = single-nozzle / uninitialized. */
-  nozzle_id: number | null;
   slot_id: number;
-  tray_id_name: string | null;
-  tray_sub_brands: string | null;
-  tray_type: string | null;
-  tray_color: string | null;
-  tray_colors: string[] | null;
-  tray_uuid: string | null;
-  nozzle_temp_min: number | null;
-  nozzle_temp_max: number | null;
-  tray_weight: string | null;
-  remain: number | null;
-  present: boolean;
+  nozzle_id: number | null;
+  has_spool: boolean;
+  spool: Spool | null;
 }
 
 export type MatchType =
@@ -92,8 +95,8 @@ export type SlotSyncView =
   | { status: "stale"; spool_id: number; at: string }
   | { status: "error"; error: string; at: string };
 
-export interface MatchedSlot {
-  slot: AMSSlotData;
+export interface AmsMatchedSlot {
+  slot: AmsSlot;
   type: MatchType;
   entry?: FilamentEntry;
   sync: SlotSyncView;
@@ -105,6 +108,12 @@ export type PrinterErrorCode =
   | "unreachable"
   | "other";
 
+export interface AmsUnit {
+  id: number;
+  nozzle_id: number | null;
+  slots: AmsMatchedSlot[];
+}
+
 export interface PrinterStateView {
   serial: string;
   name: string;
@@ -113,7 +122,7 @@ export interface PrinterStateView {
     lastError: string | null;
     errorCode: PrinterErrorCode | null;
   };
-  slots: MatchedSlot[];
+  ams_units: AmsUnit[];
 }
 
 export interface AppState {

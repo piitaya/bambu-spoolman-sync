@@ -1,6 +1,6 @@
 import mqtt, { type MqttClient } from "mqtt";
 import type { Printer } from "./config.js";
-import type { AMSSlot } from "./matcher.js";
+import { toSpool, type AmsUnit } from "./spool.js";
 
 /**
  * Friendly error categories for the dashboard. The frontend looks
@@ -25,7 +25,7 @@ const NETWORK_ERROR_CODES = new Set([
   "ENOTFOUND",
   "EHOSTUNREACH",
   "ENETUNREACH",
-  "ECONNRESET"
+  "ECONNRESET",
 ]);
 
 /**
@@ -33,7 +33,7 @@ const NETWORK_ERROR_CODES = new Set([
  * tested directly in mqtt.test.ts without spinning up a real client.
  */
 export function classifyMqttError(
-  err: Error & { code?: number | string }
+  err: Error & { code?: number | string },
 ): PrinterErrorCode {
   // mqtt.js exposes the MQTT 3.1.1 CONNACK return code on `code`.
   // 4 = bad username/password, 5 = not authorized.
@@ -60,12 +60,12 @@ export function classifyMqttError(
 export interface PrinterRuntime {
   printer: Printer;
   status: PrinterStatus;
-  slots: AMSSlot[];
+  ams_units: AmsUnit[];
   disconnect(): Promise<void>;
 }
 
 export type OnStatus = (printer: Printer, status: PrinterStatus) => void;
-export type OnSlots = (printer: Printer, slots: AMSSlot[]) => void;
+export type OnAmsUpdate = (printer: Printer, ams_units: AmsUnit[]) => void;
 
 /**
  * Decode the nozzle (extruder) assignment from an AMS `info` hex string.
@@ -94,74 +94,45 @@ function parseHexBits(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/**
- * Flatten `payload.print.ams.ams[].tray[]` into a flat AMSSlot[].
- * Reference: https://github.com/Doridian/OpenBambuAPI/blob/main/mqtt.md
- */
 export function parseAmsReport(
   printerSerial: string,
-  payload: unknown
-): AMSSlot[] {
-  // `tray_exist_bits` is a hex bitmask at the AMS-payload level:
-  // bit N = 1 means slot N of that AMS is physically occupied. This
-  // is the only reliable "is there a spool in this slot?" signal —
-  // per-tray `state` values are undocumented and differ between AMS
-  // generations (e.g. 9, 26 for empty, 11 for loaded).
+  payload: unknown,
+): AmsUnit[] {
   const amsPayload = (payload as any)?.print?.ams;
   const trayExistBits = parseHexBits(amsPayload?.tray_exist_bits);
   const amsList = amsPayload?.ams;
   if (!Array.isArray(amsList)) return [];
-  const slots: AMSSlot[] = [];
+
+  const units: AmsUnit[] = [];
   for (const ams of amsList) {
     const amsId = Number(ams?.id ?? 0);
     const nozzleId = decodeNozzleId(ams?.info);
-    const trays = Array.isArray(ams?.tray) ? ams.tray : [];
-    for (const tray of trays) {
-      const slotId = Number(tray?.id ?? 0);
-      // tray_exist_bits is a flat bitmask covering up to 4 slots per
-      // AMS unit, packed as (amsId * 4 + slotId). For single-AMS
-      // printers this degenerates to bit = slotId.
+    const trays: unknown[] = Array.isArray(ams?.tray) ? ams.tray : [];
+    const slots = trays.map((tray) => {
+      const t = tray as Record<string, unknown> | null;
+      const slotId = Number(t?.id ?? 0);
       const globalBit = amsId * 4 + slotId;
-      const present =
+      const hasSpool =
         trayExistBits != null ? ((trayExistBits >> globalBit) & 1) === 1 : true;
-      slots.push({
+      return {
         printer_serial: printerSerial,
         ams_id: amsId,
-        nozzle_id: nozzleId,
         slot_id: slotId,
-        tray_id_name: tray?.tray_id_name ?? null,
-        tray_sub_brands: tray?.tray_sub_brands ?? null,
-        tray_type: tray?.tray_type ?? null,
-        tray_color: tray?.tray_color ?? null,
-        tray_colors: Array.isArray(tray?.cols)
-          ? (tray.cols as unknown[]).filter(
-              (c): c is string => typeof c === "string"
-            )
-          : null,
-        // Normalize the all-zeros sentinel the printer sends for
-        // third-party / unread spools to null so downstream code can
-        // just check truthiness.
-        tray_uuid:
-          tray?.tray_uuid && !/^0+$/.test(tray.tray_uuid)
-            ? tray.tray_uuid
-            : null,
-        nozzle_temp_min:
-          tray?.nozzle_temp_min != null ? Number(tray.nozzle_temp_min) : null,
-        nozzle_temp_max:
-          tray?.nozzle_temp_max != null ? Number(tray.nozzle_temp_max) : null,
-        tray_weight: tray?.tray_weight ?? null,
-        remain: tray?.remain != null ? Number(tray.remain) : null,
-        present
-      });
-    }
+        nozzle_id: nozzleId,
+        has_spool: hasSpool,
+        spool: hasSpool ? toSpool(tray) : null,
+      };
+    });
+    slots.sort((a, b) => a.slot_id - b.slot_id);
+    units.push({ id: amsId, nozzle_id: nozzleId, slots });
   }
-  return slots;
+  return units;
 }
 
 interface InternalClient {
   printer: Printer;
   status: PrinterStatus;
-  slots: AMSSlot[];
+  ams_units: AmsUnit[];
   mqtt: MqttClient;
   disconnect(): Promise<void>;
 }
@@ -169,13 +140,13 @@ interface InternalClient {
 function connect(
   printer: Printer,
   onStatus?: OnStatus,
-  onSlots?: OnSlots
+  onAmsUpdate?: OnAmsUpdate,
 ): InternalClient {
   const status: PrinterStatus = {
     lastError: null,
-    errorCode: null
+    errorCode: null,
   };
-  const state = { slots: [] as AMSSlot[] };
+  const amsUnits: AmsUnit[] = [];
   let hasEverReceivedMessage = false;
   let watchdog: NodeJS.Timeout | null = null;
 
@@ -216,7 +187,7 @@ function connect(
     connectTimeout: 10_000,
     clientId: `bsync-${printer.serial.slice(-6)}-${Math.random()
       .toString(16)
-      .slice(2, 8)}`
+      .slice(2, 8)}`,
   });
 
   const topic = `device/${printer.serial}/report`;
@@ -234,7 +205,7 @@ function connect(
     });
     client.publish(
       `device/${printer.serial}/request`,
-      JSON.stringify({ pushing: { sequence_id: "0", command: "pushall" } })
+      JSON.stringify({ pushing: { sequence_id: "0", command: "pushall" } }),
     );
     armWatchdog();
   });
@@ -253,20 +224,20 @@ function connect(
       return;
     }
     if (!Array.isArray((payload as any)?.print?.ams?.ams)) return;
-    state.slots = parseAmsReport(printer.serial, payload);
+    const parsed = parseAmsReport(printer.serial, payload);
+    amsUnits.length = 0;
+    amsUnits.push(...parsed);
     hasEverReceivedMessage = true;
     clearWatchdog();
     status.errorCode = null;
     status.lastError = null;
-    onSlots?.(printer, state.slots);
+    onAmsUpdate?.(printer, amsUnits);
   });
 
   return {
     printer,
     status,
-    get slots() {
-      return state.slots;
-    },
+    ams_units: amsUnits,
     mqtt: client,
     async disconnect() {
       clearWatchdog();
@@ -285,7 +256,7 @@ function connect(
       } finally {
         clearTimeout(force);
       }
-    }
+    },
   };
 }
 
@@ -305,10 +276,10 @@ export function syncPrinters(
   target: Printer[],
   state: MqttState,
   onStatus?: OnStatus,
-  onSlots?: OnSlots
+  onAmsUpdate?: OnAmsUpdate,
 ): void {
   const wanted = new Map(
-    target.filter((p) => p.enabled).map((p) => [p.serial, p])
+    target.filter((p) => p.enabled).map((p) => [p.serial, p]),
   );
 
   for (const [serial, client] of state) {
@@ -329,7 +300,7 @@ export function syncPrinters(
 
   for (const printer of wanted.values()) {
     if (state.has(printer.serial)) continue;
-    state.set(printer.serial, connect(printer, onStatus, onSlots));
+    state.set(printer.serial, connect(printer, onStatus, onAmsUpdate));
   }
 }
 
@@ -337,8 +308,8 @@ export function listRuntimes(state: MqttState): PrinterRuntime[] {
   return Array.from(state.values()).map((c) => ({
     printer: c.printer,
     status: c.status,
-    slots: c.slots,
-    disconnect: c.disconnect
+    ams_units: c.ams_units,
+    disconnect: c.disconnect,
   }));
 }
 
