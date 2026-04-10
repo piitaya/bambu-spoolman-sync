@@ -1,5 +1,6 @@
-import type { Spool } from "../domain/spool.js";
+import { hasUid, type Spool } from "../domain/spool.js";
 import { matchSpool, type FilamentEntry, type MatchType } from "../domain/matcher.js";
+import { toSpoolUpsert, type SpoolRepository } from "../db/spool.repository.js";
 import {
   createSpoolmanClient,
   decodeExtraString,
@@ -17,6 +18,7 @@ export interface ScanResult {
 export async function scanSpool(
   spool: Spool,
   mapping: Map<string, FilamentEntry>,
+  spoolRepo: SpoolRepository,
   spoolmanUrl?: string,
   clientFactory: (url: string) => SpoolmanClient = createSpoolmanClient,
 ): Promise<ScanResult> {
@@ -24,6 +26,10 @@ export async function scanSpool(
   let enrichedSpool = spool;
   let synced = false;
   let archived = false;
+
+  if (hasUid(spool)) {
+    spoolRepo.upsert(toSpoolUpsert(spool, "scan"));
+  }
 
   if (spoolmanUrl && spool.uid) {
     try {

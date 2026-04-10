@@ -15,6 +15,7 @@ import {
 
 const CONFIG_KEY = ["config"] as const;
 const STATE_KEY = ["state"] as const;
+const SPOOLS_KEY = ["spools"] as const;
 
 export const useConfig = () =>
   useQuery({ queryKey: CONFIG_KEY, queryFn: api.getConfig });
@@ -24,6 +25,12 @@ export const useAppState = () =>
     queryKey: STATE_KEY,
     queryFn: api.getState,
     refetchInterval: 3000
+  });
+
+export const useSpools = () =>
+  useQuery({
+    queryKey: SPOOLS_KEY,
+    queryFn: api.listSpools,
   });
 
 const invalidateAll = (qc: ReturnType<typeof useQueryClient>) => {

@@ -25,6 +25,21 @@ export interface Config {
   };
 }
 
+export interface LocalSpool {
+  id: string;
+  tag_id: string | null;
+  variant_id: string | null;
+  material: string | null;
+  product: string | null;
+  color_hex: string | null;
+  color_name: string | null;
+  weight: number | null;
+  remain: number | null;
+  source: string;
+  first_seen: string;
+  last_seen: string;
+}
+
 export interface SyncOutcome {
   printer_serial: string;
   ams_id: number;
@@ -210,5 +225,6 @@ export const api = {
     req<SyncOutcome>(
       `/api/spoolman/sync/${encodeURIComponent(serial)}/${amsId}/${slotId}`,
       { method: "POST" }
-    )
+    ),
+  listSpools: () => req<LocalSpool[]>("/api/spools"),
 };

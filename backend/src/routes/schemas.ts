@@ -49,6 +49,21 @@ export const SyncOutcomeResponse = Type.Intersect([
   }),
 ]);
 
+export const LocalSpoolResponse = Type.Object({
+  id: Type.String(),
+  tag_id: Type.String(),
+  variant_id: NullableString,
+  material: NullableString,
+  product: NullableString,
+  color_hex: NullableString,
+  color_name: NullableString,
+  weight: NullableNumber,
+  remain: Type.Union([Type.Integer(), Type.Null()]),
+  source: Type.String(),
+  first_seen: Type.String(),
+  last_seen: Type.String(),
+});
+
 export const SyncAllResultResponse = Type.Object({
   synced: Type.Array(SyncOutcomeResponse),
   skipped: Type.Array(

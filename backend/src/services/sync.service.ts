@@ -1,4 +1,4 @@
-import type { AmsSlot, Spool } from "../domain/spool.js";
+import { computeUsedWeight, type AmsSlot, type Spool } from "../domain/spool.js";
 import { matchSpool, type FilamentEntry } from "../domain/matcher.js";
 import {
   type SyncStateStore,
@@ -53,10 +53,6 @@ export interface SyncAllResult {
     slot_id: number;
     error: string;
   }>;
-}
-
-function computeUsedWeight(weight: number, remain: number): number {
-  return Math.max(0, weight * (1 - remain / 100));
 }
 
 export function evaluateSpoolForSync(

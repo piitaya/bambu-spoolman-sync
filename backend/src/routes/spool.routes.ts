@@ -4,10 +4,37 @@ import { SpoolScanSchema, type SpoolScan } from "../domain/spool.js";
 import type { RouteDeps } from "../context.js";
 import { syncSpool } from "../services/sync.service.js";
 import { scanSpool } from "../services/scan.service.js";
-import { ErrorResponse, SpoolResponse, MatchTypeEnum } from "./schemas.js";
+import { ErrorResponse, SpoolResponse, MatchTypeEnum, LocalSpoolResponse } from "./schemas.js";
 import { errorMessage } from "../utils.js";
 
 export const spoolRoutes: FastifyPluginAsync<RouteDeps> = async (app, { ctx }) => {
+  app.get("/api/spools", {
+    schema: {
+      tags: ["Spools"],
+      description: "List all locally tracked spools, enriched with filament name from community DB",
+      response: { 200: Type.Array(LocalSpoolResponse) },
+    },
+  }, async () => {
+    const rows = ctx.spoolRepo.list();
+    return rows.map((row) => {
+      const entry = row.variantId ? ctx.mapping.byId.get(row.variantId) : null;
+      return {
+        id: row.id,
+        tag_id: row.tagId,
+        variant_id: row.variantId,
+        material: row.material,
+        product: row.product,
+        color_hex: row.colorHex,
+        color_name: entry?.color_name ?? null,
+        weight: row.weight,
+        remain: row.remain,
+        source: row.source,
+        first_seen: row.firstSeen,
+        last_seen: row.lastSeen,
+      };
+    });
+  });
+
   app.post("/api/spools/scan", {
     schema: {
       tags: ["Spools"],
@@ -28,6 +55,7 @@ export const spoolRoutes: FastifyPluginAsync<RouteDeps> = async (app, { ctx }) =
     return scanSpool(
       req.body as SpoolScan,
       ctx.mapping.byId,
+      ctx.spoolRepo,
       ctx.config.spoolman.url,
     );
   });
