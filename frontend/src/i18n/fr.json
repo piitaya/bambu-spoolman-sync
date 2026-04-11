@@ -203,9 +203,7 @@
     "title": "Bobines",
     "empty": "Aucune bobine scannée. Les bobines sont automatiquement suivies lorsqu'elles sont détectées dans l'AMS.",
     "failed_to_load": "Impossible de charger les bobines",
-    "last_seen": "Dernière détection",
-    "source_ams": "AMS",
-    "source_scan": "Scan"
+    "last_updated": "Dernière mise à jour"
   },
   "spoolman": {
     "sync_slot": {

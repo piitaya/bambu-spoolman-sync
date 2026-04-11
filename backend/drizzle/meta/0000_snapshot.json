@@ -1,23 +1,16 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e2bf48fe-dbed-457e-8913-e42e803d87c3",
+  "id": "991707f6-5fce-4f22-961b-e235e1556e29",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "spools": {
       "name": "spools",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
         "tag_id": {
           "name": "tag_id",
           "type": "text",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true,
           "autoincrement": false
         },
@@ -63,13 +56,12 @@
           "notNull": false,
           "autoincrement": false
         },
-        "source": {
-          "name": "source",
+        "last_used": {
+          "name": "last_used",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'ams'"
+          "notNull": false,
+          "autoincrement": false
         },
         "first_seen": {
           "name": "first_seen",
@@ -79,8 +71,8 @@
           "autoincrement": false,
           "default": "(datetime('now'))"
         },
-        "last_seen": {
-          "name": "last_seen",
+        "last_updated": {
+          "name": "last_updated",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -88,15 +80,7 @@
           "default": "(datetime('now'))"
         }
       },
-      "indexes": {
-        "spools_tag_id_unique": {
-          "name": "spools_tag_id_unique",
-          "columns": [
-            "tag_id"
-          ],
-          "isUnique": true
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

@@ -203,9 +203,7 @@
     "title": "Spools",
     "empty": "No spools scanned yet. Spools are automatically tracked when detected in the AMS.",
     "failed_to_load": "Failed to load spools",
-    "last_seen": "Last seen",
-    "source_ams": "AMS",
-    "source_scan": "Scan"
+    "last_updated": "Last updated"
   },
   "spoolman": {
     "sync_slot": {

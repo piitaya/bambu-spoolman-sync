@@ -1,6 +1,5 @@
 import {
   Alert,
-  Badge,
   Card,
   ColorSwatch,
   Group,
@@ -15,9 +14,11 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { LocalSpool } from "../api";
 import { useSpools } from "../hooks";
+import { spoolFillColor } from "../components/spoolFillColor";
 
-function formatDate(iso: string): string {
-  return new Date(iso + "Z").toLocaleString();
+function formatDate(value: string): string {
+  const normalized = value.includes("T") ? value : value.replace(" ", "T") + "Z";
+  return new Date(normalized).toLocaleString();
 }
 
 function sortData(data: LocalSpool[], { columnAccessor, direction }: DataTableSortStatus<LocalSpool>): LocalSpool[] {
@@ -37,7 +38,7 @@ export default function SpoolsPage() {
   const { data: spools, isLoading, isError, error } = useSpools();
   const { t } = useTranslation();
   const [sortStatus, setSortStatus] = useState<DataTableSortStatus<LocalSpool>>({
-    columnAccessor: "last_seen",
+    columnAccessor: "last_updated",
     direction: "desc",
   });
 
@@ -72,7 +73,7 @@ export default function SpoolsPage() {
           withTableBorder
           highlightOnHover
           records={sorted}
-          idAccessor="id"
+          idAccessor="tag_id"
           sortStatus={sortStatus}
           onSortStatusChange={setSortStatus}
           columns={[
@@ -124,13 +125,7 @@ export default function SpoolsPage() {
                       value={spool.remain}
                       size="sm"
                       style={{ flex: 1 }}
-                      color={
-                        spool.remain > 25
-                          ? "teal"
-                          : spool.remain > 10
-                            ? "yellow"
-                            : "red"
-                      }
+                      color={spoolFillColor(spool.remain)}
                     />
                     <Text size="xs" c="dimmed" w={36} ta="right">
                       {spool.remain}%
@@ -141,26 +136,12 @@ export default function SpoolsPage() {
                 ),
             },
             {
-              accessor: "source",
-              title: t("slot.sections.source"),
-              sortable: true,
-              render: (spool) => (
-                <Badge
-                  variant="light"
-                  color={spool.source === "scan" ? "blue" : "gray"}
-                  size="sm"
-                >
-                  {t(`spools.source_${spool.source}`)}
-                </Badge>
-              ),
-            },
-            {
-              accessor: "last_seen",
-              title: t("spools.last_seen"),
+              accessor: "last_updated",
+              title: t("spools.last_updated"),
               sortable: true,
               render: (spool) => (
                 <Text size="xs" c="dimmed">
-                  {formatDate(spool.last_seen)}
+                  {formatDate(spool.last_updated)}
                 </Text>
               ),
             },

@@ -11,14 +11,14 @@ export interface SpoolUpsert {
   material?: string | null;
   product?: string | null;
   colorHex?: string | null;
-  source?: "ams" | "scan";
   weight?: number | null;
   remain?: number | null;
+  lastUsed?: string | null;
+  lastUpdated?: string;
 }
 
 export function toSpoolUpsert(
   spool: Spool & { uid: string },
-  source?: "ams" | "scan",
 ): SpoolUpsert {
   return {
     tagId: spool.uid,
@@ -28,14 +28,12 @@ export function toSpoolUpsert(
     colorHex: spool.color_hex,
     weight: spool.weight,
     remain: spool.remain,
-    ...(source ? { source } : {}),
   };
 }
 
 export interface SpoolRepository {
   upsert(data: SpoolUpsert): void;
   findByTagId(tagId: string): SpoolRow | undefined;
-  findById(id: string): SpoolRow | undefined;
   list(): SpoolRow[];
 }
 
@@ -45,13 +43,14 @@ export function createSpoolRepository(db: AppDatabase): SpoolRepository {
       db.insert(spools)
         .values({
           tagId: data.tagId,
-          variantId: data.variantId ?? null,
-          material: data.material ?? null,
-          product: data.product ?? null,
-          colorHex: data.colorHex ?? null,
-          source: data.source ?? "ams",
-          weight: data.weight ?? null,
-          remain: data.remain ?? null,
+          variantId: data.variantId,
+          material: data.material,
+          product: data.product,
+          colorHex: data.colorHex,
+          weight: data.weight,
+          remain: data.remain,
+          lastUsed: data.lastUsed,
+          lastUpdated: data.lastUpdated,
         })
         .onConflictDoUpdate({
           target: spools.tagId,
@@ -61,8 +60,9 @@ export function createSpoolRepository(db: AppDatabase): SpoolRepository {
             product: sql`COALESCE(excluded.product, ${spools.product})`,
             colorHex: sql`COALESCE(excluded.color_hex, ${spools.colorHex})`,
             weight: sql`COALESCE(excluded.weight, ${spools.weight})`,
-            remain: sql`excluded.remain`,
-            lastSeen: sql`datetime('now')`,
+            remain: sql`COALESCE(excluded.remain, ${spools.remain})`,
+            lastUsed: sql`COALESCE(excluded.last_used, ${spools.lastUsed})`,
+            lastUpdated: sql`COALESCE(excluded.last_updated, ${spools.lastUpdated})`,
           },
         })
         .run();
@@ -72,12 +72,12 @@ export function createSpoolRepository(db: AppDatabase): SpoolRepository {
       return db.select().from(spools).where(eq(spools.tagId, tagId)).get();
     },
 
-    findById(id) {
-      return db.select().from(spools).where(eq(spools.id, id)).get();
-    },
-
     list() {
-      return db.select().from(spools).orderBy(sql`${spools.lastSeen} DESC`).all();
+      return db
+        .select()
+        .from(spools)
+        .orderBy(sql`${spools.lastUpdated} DESC`)
+        .all();
     },
   };
 }

@@ -202,14 +202,15 @@ export const useTestSpoolman = () => {
   });
 };
 
-export const useSyncAllSpoolman = () => {
+export const useSyncSpoolman = () => {
   const qc = useQueryClient();
   const { t } = useTranslation();
   const toast = useToasts();
   return useMutation({
-    mutationFn: () => api.syncAllSpoolman(),
+    mutationFn: (tagIds: string[]) => api.syncSpoolman(tagIds),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: STATE_KEY });
+      qc.invalidateQueries({ queryKey: SPOOLS_KEY });
       if (result.errors.length > 0) {
         toast.error(
           new Error(
@@ -227,28 +228,6 @@ export const useSyncAllSpoolman = () => {
           skipped: result.skipped.length
         })
       );
-    },
-    onError: toast.error
-  });
-};
-
-export const useSyncSlotSpoolman = () => {
-  const qc = useQueryClient();
-  const { t } = useTranslation();
-  const toast = useToasts();
-  return useMutation({
-    mutationFn: ({
-      serial,
-      amsId,
-      slotId
-    }: {
-      serial: string;
-      amsId: number;
-      slotId: number;
-    }) => api.syncSlotSpoolman(serial, amsId, slotId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: STATE_KEY });
-      toast.success(t("spoolman.sync_slot.done"));
     },
     onError: toast.error
   });
