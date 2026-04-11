@@ -19,6 +19,7 @@ export function createSpoolService(spoolRepo: SpoolRepository): SpoolService {
         ...toSpoolUpsert(spool),
         lastUsed: options?.lastUsed,
         lastUpdated: now,
+        firstSeen: now,
       });
       listener?.(spool.uid);
     },

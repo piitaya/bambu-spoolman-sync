@@ -15,6 +15,7 @@ export interface SpoolUpsert {
   remain?: number | null;
   lastUsed?: string | null;
   lastUpdated?: string;
+  firstSeen?: string;
 }
 
 export function toSpoolUpsert(
@@ -51,6 +52,7 @@ export function createSpoolRepository(db: AppDatabase): SpoolRepository {
           remain: data.remain,
           lastUsed: data.lastUsed,
           lastUpdated: data.lastUpdated,
+          firstSeen: data.firstSeen,
         })
         .onConflictDoUpdate({
           target: spools.tagId,
