@@ -24,6 +24,7 @@ const MAPPING_SOURCE_URL =
 export async function buildApp() {
   const useJsonLogs = process.env.LOG_FORMAT === "json";
   const app = Fastify({
+    disableRequestLogging: true,
     logger: {
       level: process.env.LOG_LEVEL ?? "info",
       ...(!useJsonLogs && {
