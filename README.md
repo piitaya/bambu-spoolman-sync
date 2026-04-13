@@ -184,10 +184,10 @@ services:
 
 Common messages to look for when troubleshooting:
 
-* **`printer connection error` with `errorCode="unauthorized"`** — wrong access code
-* **`printer not responding`** — wrong IP, printer off, or firewall blocking port 8883
-* **`spoolman request failed`** — Spoolman URL is wrong or Spoolman is down
-* **`spool skipped` with `reason="not_matched"`** — spool variant not in the community filament catalog
+* **`Printer connection error` with `errorCode="unauthorized"`** — wrong access code
+* **`Printer not responding`** — wrong IP, printer off, or firewall blocking port 8883
+* **`Spoolman request failed`** — Spoolman URL is wrong or Spoolman is down
+* **`Spool skipped` with `reason="not_matched"`** — spool variant not in the community filament catalog
 
 ## License
 
