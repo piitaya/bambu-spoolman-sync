@@ -39,8 +39,8 @@ function rowToEvent(row: SpoolHistoryRow): SpoolHistoryEvent {
   return {
     id: row.id,
     tag_id: row.tagId,
-    source: row.source as SpoolHistorySource,
-    kind: row.kind as SpoolHistoryKind,
+    source: row.source,
+    kind: row.kind,
     printer_serial: row.printerSerial,
     ams_id: row.amsId,
     slot_id: row.slotId,

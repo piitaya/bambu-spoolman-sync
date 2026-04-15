@@ -95,10 +95,13 @@ export const SpoolHistoryResponseSchema = Type.Object({
   range: Type.Object({ from: Type.String(), to: Type.String() }),
 });
 
+const ISO_DATE_TIME_PATTERN =
+  "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})$";
+
 export const SpoolHistoryQuerySchema = Type.Object({
-  from: Type.Optional(Type.String()),
-  to: Type.Optional(Type.String()),
-  before: Type.Optional(Type.String()),
+  from: Type.Optional(Type.String({ pattern: ISO_DATE_TIME_PATTERN })),
+  to: Type.Optional(Type.String({ pattern: ISO_DATE_TIME_PATTERN })),
+  before: Type.Optional(Type.String({ pattern: ISO_DATE_TIME_PATTERN })),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 5000 })),
 });
 export type SpoolHistoryQuery = Static<typeof SpoolHistoryQuerySchema>;

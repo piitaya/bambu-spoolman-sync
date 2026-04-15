@@ -3,15 +3,19 @@ import {
   Alert,
   Anchor,
   Badge,
+  Box,
   Card,
+  Grid,
   Group,
   Loader,
   Menu,
   Paper,
   Progress,
+  ScrollArea,
   SegmentedControl,
   SimpleGrid,
   Stack,
+  Tabs,
   Text,
   Title,
   Tooltip,
@@ -27,7 +31,7 @@ import {
   IconRefresh,
   IconTrash,
 } from "@tabler/icons-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AdjustRemainModal } from "../components/AdjustRemainModal";
@@ -302,123 +306,154 @@ export default function SpoolDetailPage() {
         </StatCard>
       </SimpleGrid>
 
-      <Card withBorder padding="lg" radius="md">
-        <Stack gap="md">
-          <Group justify="space-between" align="center" wrap="wrap">
-            <Title order={4}>{t("spool_detail.chart.title")}</Title>
-            <Group gap="sm" wrap="wrap">
-              <SegmentedControl
-                size="xs"
-                value={preset}
-                onChange={(value) => setPreset(value as Preset)}
-                data={[
-                  { value: "7d", label: t("spool_detail.range.7d") },
-                  { value: "30d", label: t("spool_detail.range.30d") },
-                  { value: "90d", label: t("spool_detail.range.90d") },
-                  { value: "all", label: t("spool_detail.range.all") },
-                  { value: "custom", label: t("spool_detail.range.custom") },
-                ]}
-              />
-              {preset === "custom" && (
-                <DatePickerInput
-                  type="range"
-                  size="xs"
-                  value={customRange}
-                  onChange={(value) => setCustomRange(value as [Date | null, Date | null])}
-                  leftSection={<IconCalendar size={14} />}
-                  placeholder={t("spool_detail.range.custom_placeholder")}
-                  clearable={false}
-                  miw={240}
-                />
-              )}
-            </Group>
-          </Group>
-          <SpoolRemainChart
-            events={historyQuery.data?.events}
-            range={range}
-            currentRemain={spool.remain}
-            loading={historyQuery.isLoading}
-          />
-        </Stack>
-      </Card>
-
-      <Card withBorder padding="lg" radius="md">
-        <Stack gap="md">
-          <Title order={4}>{t("spool_detail.timeline.title")}</Title>
-          {historyQuery.isLoading ? (
-            <Loader size="sm" />
-          ) : (
-            <SpoolTimeline events={historyQuery.data?.events} />
-          )}
-          {historyQuery.data?.has_more && (
-            <Alert variant="light" color="gray">
-              {t("spool_detail.timeline.has_more")}
-            </Alert>
-          )}
-        </Stack>
-      </Card>
-
-      <Card withBorder padding="lg" radius="md">
-        <Stack gap="sm">
-          <Title order={4}>{t("spool_detail.details.title")}</Title>
-          <DetailRow label={t("slot.fields.spool_uid")}>
-            <CopyableMono value={spool.tag_id} />
-          </DetailRow>
-          {spool.variant_id && (
-            <DetailRow label={t("slot.fields.bambu_filament")}>
-              <CopyableMono value={spool.variant_id} />
-            </DetailRow>
-          )}
-          {totalWeight != null && (
-            <DetailRow label={t("slot.fields.total_weight")}>
-              <Text size="sm">{totalWeight} g</Text>
-            </DetailRow>
-          )}
-          {swatches.length > 0 && (
-            <DetailRow
-              label={t(swatches.length > 1 ? "slot.fields.colors_hex" : "slot.fields.color_hex")}
-            >
-              <CopyableMono value={swatches.join(", ")} />
-            </DetailRow>
-          )}
-          <DetailRow label={t("slot.fields.first_seen")}>
-            <Text size="sm">{new Date(spool.first_seen).toLocaleString()}</Text>
-          </DetailRow>
-          <DetailRow label={t("slot.fields.last_updated")}>
-            <Text size="sm">{new Date(spool.last_updated).toLocaleString()}</Text>
-          </DetailRow>
-          {spool.match_type === "mapped" &&
-            (spool.sync.status === "synced" || spool.sync.status === "stale") && (
-              <DetailRow label={t("slot.fields.spoolman_spool")}>
-                <Group gap={4} wrap="nowrap">
-                  <Text size="sm">#{spool.sync.spoolman_spool_id}</Text>
-                  {spoolmanUrl && (
-                    <Tooltip label={t("slot.sync_status.open_in_spoolman")} withArrow>
-                      <ActionIcon
-                        size="sm"
-                        variant="subtle"
-                        color="gray"
-                        component="a"
-                        href={`${spoolmanUrl}/spool/show/${spool.sync.spoolman_spool_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <IconExternalLink size={14} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
+      <MainWithSide
+        mainTabLabel={t("spool_detail.tabs.info")}
+        sideTabLabel={t("spool_detail.tabs.activity")}
+        main={(
+          <>
+            <Card withBorder padding="lg" radius="md">
+              <Stack gap="md">
+                <Group justify="space-between" align="center" wrap="wrap">
+                  <Title order={4}>{t("spool_detail.chart.title")}</Title>
+                  <Group gap="sm" wrap="wrap">
+                    <SegmentedControl
+                      size="xs"
+                      value={preset}
+                      onChange={(value) => setPreset(value as Preset)}
+                      data={[
+                        { value: "7d", label: t("spool_detail.range.7d") },
+                        { value: "30d", label: t("spool_detail.range.30d") },
+                        { value: "90d", label: t("spool_detail.range.90d") },
+                        { value: "all", label: t("spool_detail.range.all") },
+                        { value: "custom", label: t("spool_detail.range.custom") },
+                      ]}
+                    />
+                    {preset === "custom" && (
+                      <DatePickerInput
+                        type="range"
+                        size="xs"
+                        value={customRange}
+                        onChange={(value) =>
+                          setCustomRange(value as [Date | null, Date | null])
+                        }
+                        leftSection={<IconCalendar size={14} />}
+                        placeholder={t("spool_detail.range.custom_placeholder")}
+                        clearable={false}
+                        miw={240}
+                      />
+                    )}
+                  </Group>
                 </Group>
-              </DetailRow>
-            )}
-          {spool.match_type === "mapped" && spool.sync.status === "error" && (
-            <DetailRow label={t("slot.fields.sync_error")}>
-              <Text size="sm" c="red">
-                {spool.sync.error}
-              </Text>
-            </DetailRow>
-          )}
-        </Stack>
-      </Card>
+                <SpoolRemainChart
+                  events={historyQuery.data?.events}
+                  range={range}
+                  currentRemain={spool.remain}
+                  loading={historyQuery.isLoading}
+                />
+              </Stack>
+            </Card>
+
+            <Card withBorder padding="lg" radius="md">
+              <Stack gap="sm">
+                <Title order={4}>{t("spool_detail.details.title")}</Title>
+                <DetailRow label={t("slot.fields.spool_uid")}>
+                  <CopyableMono value={spool.tag_id} />
+                </DetailRow>
+                {spool.variant_id && (
+                  <DetailRow label={t("slot.fields.bambu_filament")}>
+                    <CopyableMono value={spool.variant_id} />
+                  </DetailRow>
+                )}
+                {totalWeight != null && (
+                  <DetailRow label={t("slot.fields.total_weight")}>
+                    <Text size="sm">{totalWeight} g</Text>
+                  </DetailRow>
+                )}
+                {swatches.length > 0 && (
+                  <DetailRow
+                    label={t(
+                      swatches.length > 1
+                        ? "slot.fields.colors_hex"
+                        : "slot.fields.color_hex",
+                    )}
+                  >
+                    <CopyableMono value={swatches.join(", ")} />
+                  </DetailRow>
+                )}
+                <DetailRow label={t("slot.fields.first_seen")}>
+                  <Text size="sm">
+                    {new Date(spool.first_seen).toLocaleString()}
+                  </Text>
+                </DetailRow>
+                <DetailRow label={t("slot.fields.last_updated")}>
+                  <Text size="sm">
+                    {new Date(spool.last_updated).toLocaleString()}
+                  </Text>
+                </DetailRow>
+                {spool.match_type === "mapped" &&
+                  (spool.sync.status === "synced" ||
+                    spool.sync.status === "stale") && (
+                    <DetailRow label={t("slot.fields.spoolman_spool")}>
+                      <Group gap={4} wrap="nowrap">
+                        <Text size="sm">#{spool.sync.spoolman_spool_id}</Text>
+                        {spoolmanUrl && (
+                          <Tooltip
+                            label={t("slot.sync_status.open_in_spoolman")}
+                            withArrow
+                          >
+                            <ActionIcon
+                              size="sm"
+                              variant="subtle"
+                              color="gray"
+                              component="a"
+                              href={`${spoolmanUrl}/spool/show/${spool.sync.spoolman_spool_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <IconExternalLink size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
+                      </Group>
+                    </DetailRow>
+                  )}
+                {spool.match_type === "mapped" &&
+                  spool.sync.status === "error" && (
+                    <DetailRow label={t("slot.fields.sync_error")}>
+                      <Text size="sm" c="red">
+                        {spool.sync.error}
+                      </Text>
+                    </DetailRow>
+                  )}
+              </Stack>
+            </Card>
+          </>
+        )}
+        side={(
+          <Card
+            withBorder
+            padding="lg"
+            radius="md"
+            style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
+          >
+            <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+              <Title order={4}>{t("spool_detail.timeline.title")}</Title>
+              {historyQuery.isLoading ? (
+                <Loader size="sm" />
+              ) : (
+                <ScrollArea type="auto" offsetScrollbars style={{ flex: 1, minHeight: 0 }}>
+                  <SpoolTimeline events={historyQuery.data?.events} />
+                </ScrollArea>
+              )}
+              {historyQuery.data?.has_more && (
+                <Alert variant="light" color="gray">
+                  {t("spool_detail.timeline.has_more")}
+                </Alert>
+              )}
+            </Stack>
+          </Card>
+        )}
+      />
 
       <AdjustRemainModal
         key={spool.tag_id}
@@ -441,6 +476,48 @@ export default function SpoolDetailPage() {
         loading={removeSpool.isPending}
       />
     </Stack>
+  );
+}
+
+interface MainWithSideProps {
+  main: ReactNode;
+  side: ReactNode;
+  mainTabLabel: string;
+  sideTabLabel: string;
+}
+
+function MainWithSide({ main, side, mainTabLabel, sideTabLabel }: MainWithSideProps) {
+  return (
+    <>
+      <Box
+        visibleFrom="md"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "2fr 1fr",
+          gap: "var(--mantine-spacing-md)",
+          alignItems: "stretch",
+        }}
+      >
+        <Stack gap="lg">{main}</Stack>
+        <Box style={{ position: "relative" }}>
+          <Box style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+            {side}
+          </Box>
+        </Box>
+      </Box>
+      <Tabs defaultValue="main" hiddenFrom="md" variant="outline">
+        <Tabs.List>
+          <Tabs.Tab value="main">{mainTabLabel}</Tabs.Tab>
+          <Tabs.Tab value="side">{sideTabLabel}</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="main" pt="md">
+          <Stack gap="lg">{main}</Stack>
+        </Tabs.Panel>
+        <Tabs.Panel value="side" pt="md">
+          {side}
+        </Tabs.Panel>
+      </Tabs>
+    </>
   );
 }
 

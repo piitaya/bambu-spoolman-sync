@@ -250,12 +250,16 @@
         "manual": "Manual"
       },
       "body": {
-        "remain": "Remaining {{value}}%",
-        "remain_delta": "Remaining {{from}}% \u2192 {{to}}%"
+        "remain": "{{value}}%",
+        "remain_delta": "{{from}}% \u2192 {{to}}%"
       }
     },
     "details": {
       "title": "Details"
+    },
+    "tabs": {
+      "info": "Info",
+      "activity": "Activity"
     }
   },
   "spools": {
