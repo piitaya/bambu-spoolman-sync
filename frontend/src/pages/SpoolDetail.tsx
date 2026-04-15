@@ -5,7 +5,6 @@ import {
   Badge,
   Box,
   Card,
-  Grid,
   Group,
   Loader,
   Menu,
@@ -20,6 +19,7 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { DatePickerInput } from "@mantine/dates";
 import {
   IconArrowLeft,
@@ -487,10 +487,11 @@ interface MainWithSideProps {
 }
 
 function MainWithSide({ main, side, mainTabLabel, sideTabLabel }: MainWithSideProps) {
-  return (
-    <>
+  const isDesktop = useMediaQuery("(min-width: 48em)", true, { getInitialValueInEffect: false });
+
+  if (isDesktop) {
+    return (
       <Box
-        visibleFrom="md"
         style={{
           display: "grid",
           gridTemplateColumns: "2fr 1fr",
@@ -505,19 +506,22 @@ function MainWithSide({ main, side, mainTabLabel, sideTabLabel }: MainWithSidePr
           </Box>
         </Box>
       </Box>
-      <Tabs defaultValue="main" hiddenFrom="md" variant="outline">
-        <Tabs.List>
-          <Tabs.Tab value="main">{mainTabLabel}</Tabs.Tab>
-          <Tabs.Tab value="side">{sideTabLabel}</Tabs.Tab>
-        </Tabs.List>
-        <Tabs.Panel value="main" pt="md">
-          <Stack gap="lg">{main}</Stack>
-        </Tabs.Panel>
-        <Tabs.Panel value="side" pt="md">
-          {side}
-        </Tabs.Panel>
-      </Tabs>
-    </>
+    );
+  }
+
+  return (
+    <Tabs defaultValue="main" variant="outline">
+      <Tabs.List>
+        <Tabs.Tab value="main">{mainTabLabel}</Tabs.Tab>
+        <Tabs.Tab value="side">{sideTabLabel}</Tabs.Tab>
+      </Tabs.List>
+      <Tabs.Panel value="main" pt="md">
+        <Stack gap="lg">{main}</Stack>
+      </Tabs.Panel>
+      <Tabs.Panel value="side" pt="md">
+        {side}
+      </Tabs.Panel>
+    </Tabs>
   );
 }
 
