@@ -1,10 +1,10 @@
-import { Center, Group, Stack, Text, ThemeIcon, Timeline } from "@mantine/core";
+import { Badge, Center, Stack, Text, ThemeIcon, Timeline } from "@mantine/core";
 import {
-  IconLogin2,
-  IconLogout2,
+  IconArrowBarToDown,
+  IconArrowBarToUp,
   IconPencil,
+  IconRefresh,
   IconScan,
-  IconWaveSawTool,
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -41,35 +41,35 @@ function visualFor(
   const kind: SpoolHistoryKind = event.kind;
   if (kind === "slot_enter") {
     return {
-      icon: <IconLogin2 size={14} />,
-      color: "teal",
+      icon: <IconArrowBarToDown size={16} />,
+      color: "blue",
       title: t("spool_detail.timeline.titles.slot_enter"),
     };
   }
   if (kind === "slot_exit") {
     return {
-      icon: <IconLogout2 size={14} />,
-      color: "gray",
+      icon: <IconArrowBarToUp size={16} />,
+      color: "blue",
       title: t("spool_detail.timeline.titles.slot_exit"),
     };
   }
   if (event.source === "scan") {
     return {
-      icon: <IconScan size={14} />,
-      color: "blue",
+      icon: <IconScan size={16} />,
+      color: "violet",
       title: t("spool_detail.timeline.titles.scanned"),
     };
   }
   if (event.source === "manual") {
     return {
-      icon: <IconPencil size={14} />,
+      icon: <IconPencil size={16} />,
       color: "violet",
       title: t("spool_detail.timeline.titles.adjusted"),
     };
   }
   return {
-    icon: <IconWaveSawTool size={14} />,
-    color: "blue",
+    icon: <IconRefresh size={16} />,
+    color: "gray",
     title: `${t("spool_detail.timeline.titles.update")} (${sourceLabel[event.source]})`,
   };
 }
@@ -115,41 +115,50 @@ export function SpoolTimeline({ events, loading }: SpoolTimelineProps) {
   );
 
   return (
-    <Timeline active={ascending.length} bulletSize={28} lineWidth={2}>
+    <Timeline
+      color="gray"
+      bulletSize={32}
+      lineWidth={1}
+      styles={{
+        itemBullet: {
+          backgroundColor: "var(--mantine-color-body)",
+          border: "none",
+          padding: 0,
+        },
+      }}
+    >
       {ascending
         .map((event, index) => {
           const prev = index > 0 ? ascending[index - 1] : undefined;
           const visual = visualFor(event, t);
           const location = describeLocation(event, t);
-          const delta = describeRemainDelta(event, prev, t);
+          const remain = describeRemainDelta(event, prev, t);
           const when = new Date(event.created_at).toLocaleString();
 
           return (
             <Timeline.Item
               key={event.id}
               bullet={
-                <ThemeIcon size={28} radius="xl" variant="light" color={visual.color}>
+                <ThemeIcon size={32} radius="xl" variant="light" color={visual.color}>
                   {visual.icon}
                 </ThemeIcon>
               }
               title={
-                <Group justify="space-between" gap="sm" wrap="nowrap">
-                  <Text size="sm" fw={600}>
-                    {visual.title}
-                  </Text>
-                  <Text size="xs" c="dimmed" style={{ whiteSpace: "nowrap" }}>
-                    {when}
-                  </Text>
-                </Group>
+                <Text size="sm" fw={600}>
+                  {visual.title}
+                </Text>
               }
             >
-              <Stack gap={2}>
-                {location && (
-                  <Text size="xs" c="dimmed">
-                    {location}
-                  </Text>
+              <Stack gap={6} mt={2}>
+                <Text size="xs" c="dimmed">
+                  {when}
+                  {location && ` · ${location}`}
+                </Text>
+                {remain && (
+                  <Badge size="sm" variant="default" radius="sm">
+                    {remain}
+                  </Badge>
                 )}
-                {delta && <Text size="xs">{delta}</Text>}
               </Stack>
             </Timeline.Item>
           );

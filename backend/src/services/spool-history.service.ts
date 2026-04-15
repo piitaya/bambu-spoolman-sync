@@ -28,6 +28,13 @@ export interface SpoolHistoryServiceDeps {
   log: FastifyBaseLogger;
 }
 
+// SQLite `datetime('now')` returns UTC as "YYYY-MM-DD HH:MM:SS" without
+// timezone suffix — JS parses that as local time. Normalize to ISO-8601 UTC.
+function toIsoUtc(value: string): string {
+  if (value.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(value)) return value;
+  return `${value.replace(" ", "T")}Z`;
+}
+
 function rowToEvent(row: SpoolHistoryRow): SpoolHistoryEvent {
   return {
     id: row.id,
@@ -39,7 +46,7 @@ function rowToEvent(row: SpoolHistoryRow): SpoolHistoryEvent {
     slot_id: row.slotId,
     remain: row.remain,
     weight: row.weight,
-    created_at: row.createdAt,
+    created_at: toIsoUtc(row.createdAt),
   };
 }
 
