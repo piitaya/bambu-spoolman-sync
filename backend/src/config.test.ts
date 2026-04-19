@@ -12,7 +12,7 @@ describe("ConfigSchema", () => {
     expect(Value.Check(ConfigSchema, coerced)).toBe(true);
     const c = coerced as any;
     expect(c.printers).toEqual([]);
-    expect(c.filament_catalog.refresh_interval_hours).toBe(24);
+    expect(c.spoolman.auto_sync).toBe(false);
   });
 
   it("rejects a printer missing required fields", () => {
@@ -57,7 +57,6 @@ describe("loadConfig / saveConfig", () => {
             enabled: true,
           },
         ],
-        mapping: { refresh_interval_hours: 12 },
       });
       expect(written.printers).toHaveLength(1);
       const read = await loadConfig(path);

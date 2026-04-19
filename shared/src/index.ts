@@ -163,9 +163,6 @@ export type PrinterPatch = Partial<PrinterConfig>;
 
 export interface Config {
   printers: PrinterConfig[];
-  filament_catalog: {
-    refresh_interval_hours: number;
-  };
   spoolman: {
     url?: string;
     auto_sync: boolean;

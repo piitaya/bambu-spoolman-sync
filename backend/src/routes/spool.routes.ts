@@ -161,6 +161,7 @@ export const spoolRoutes: FastifyPluginAsync<SpoolRouteDeps> = async (app, { con
     "/api/spools/:tagId/history/:eventId",
     {
       schema: {
+        operationId: "updateSpoolHistoryEvent",
         tags: ["Spools"],
         description:
           "Edit a manual history event (only `event_type=adjust` events are editable). Updates the recorded `remain` value in place; the spool's current remain is recomputed from the latest remain-bearing event.",
@@ -205,6 +206,7 @@ export const spoolRoutes: FastifyPluginAsync<SpoolRouteDeps> = async (app, { con
     "/api/spools/:tagId/history/:eventId",
     {
       schema: {
+        operationId: "deleteSpoolHistoryEvent",
         tags: ["Spools"],
         description:
           "Delete a manual history event (only `event_type=adjust` events can be removed).",

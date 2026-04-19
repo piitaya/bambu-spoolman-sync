@@ -180,7 +180,6 @@
       "source_hint": "Le mappage est téléchargé depuis {{repo}}.",
       "last_fetched": "Dernière mise à jour : {{when}} · {{count}} variantes.",
       "never": "jamais",
-      "refresh_interval": "Intervalle de rafraîchissement (heures)",
       "refresh_now": "Rafraîchir maintenant",
       "refreshed": "Mappage rafraîchi ({{count}} variantes)"
     },
@@ -275,9 +274,6 @@
     }
   },
   "spoolman": {
-    "sync_slot": {
-      "done": "Slot synchronisé avec Spoolman"
-    },
     "sync_all": {
       "done": "{{synced}} slots synchronisés ({{skipped}} ignorés)",
       "partial": "{{synced}} slots synchronisés avec {{errors}} erreurs"

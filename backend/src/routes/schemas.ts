@@ -13,13 +13,11 @@ export function errorMessage(err: unknown): string {
 export const ErrorCode = {
   NotFound: "not_found",
   Conflict: "conflict",
-  ValidationFailed: "validation_failed",
   NotManual: "not_manual",
   SpoolmanNotConfigured: "spoolman_not_configured",
   SpoolmanUnreachable: "spoolman_unreachable",
   SpoolmanRequestFailed: "spoolman_request_failed",
   CatalogRefreshFailed: "catalog_refresh_failed",
-  Internal: "internal_error",
 } as const;
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];
 
@@ -36,10 +34,10 @@ export const OkResponse = Type.Object({
   ok: Type.Boolean(),
 });
 
-export const NullableString = Type.Union([Type.String(), Type.Null()]);
-export const NullableNumber = Type.Union([Type.Number(), Type.Null()]);
+const NullableString = Type.Union([Type.String(), Type.Null()]);
+const NullableNumber = Type.Union([Type.Number(), Type.Null()]);
 
-export const MatchTypeEnum = Type.Union([
+const MatchTypeEnum = Type.Union([
   Type.Literal("mapped"),
   Type.Literal("unmapped"),
   Type.Literal("unknown_variant"),

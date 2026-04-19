@@ -18,7 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Spool, SyncStatus } from "../api";
-import { useConfig, useRemoveSpool, useSpools, useSyncAllSpoolman } from "../hooks";
+import { useConfig, useRemoveSpool, useSpoolMap, useSpools, useSyncAllSpoolman } from "../hooks";
 import { useMatchStatus } from "../components/matchStatus";
 import { spoolFillColor } from "../components/spoolFillColor";
 import { syncStatusColor } from "../components/syncStatusColor";
@@ -89,10 +89,7 @@ export default function SpoolsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const spoolsByTagId = useMemo(
-    () => new Map(spools?.map((s) => [s.tag_id, s]) ?? []),
-    [spools],
-  );
+  const spoolsByTagId = useSpoolMap();
   const toAdjust = toAdjustId ? spoolsByTagId.get(toAdjustId) ?? null : null;
 
   const sorted = useMemo(

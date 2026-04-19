@@ -1,7 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { createSpoolmanSyncListener } from "./spoolman-sync-listener.js";
 import { createEventBus, type AppEventBus } from "../events.js";
-import type { SpoolSyncStateRow } from "../db/sync-state.repository.js";
 import type { Config } from "@bambu-spoolman-sync/shared";
 import { createTestLogger } from "../test-helpers/logger.js";
 
@@ -13,16 +12,7 @@ import { syncByTagIds } from "../spoolman-sync.js";
 
 const baseConfig: Config = {
   printers: [],
-  filament_catalog: { refresh_interval_hours: 24 },
   spoolman: { url: "http://localhost:7912", auto_sync: true, archive_on_empty: false },
-};
-
-const stubSyncStateRepo = {
-  markSynced: vi.fn(),
-  markError: vi.fn(),
-  findByTagId: vi.fn(),
-  listAll: vi.fn<() => SpoolSyncStateRow[]>(() => []),
-  listErrored: vi.fn<() => SpoolSyncStateRow[]>(() => []),
 };
 
 let bus: AppEventBus;
@@ -31,7 +21,6 @@ beforeEach(() => {
   vi.useFakeTimers();
   bus = createEventBus();
   vi.mocked(syncByTagIds).mockClear();
-  stubSyncStateRepo.listErrored.mockClear();
 });
 
 afterEach(() => {
@@ -42,7 +31,6 @@ describe("SpoolmanSyncListener", () => {
   it("batches multiple spool:updated events into one sync call", () => {
     const listener = createSpoolmanSyncListener({
       createSyncDeps: () => ({}) as any,
-      syncStateRepo: stubSyncStateRepo as any,
       bus,
       log: createTestLogger(),
       getConfig: () => baseConfig,
@@ -71,7 +59,6 @@ describe("SpoolmanSyncListener", () => {
     };
     const listener = createSpoolmanSyncListener({
       createSyncDeps: () => ({}) as any,
-      syncStateRepo: stubSyncStateRepo as any,
       bus,
       log: createTestLogger(),
       getConfig: () => disabledConfig,
@@ -89,7 +76,6 @@ describe("SpoolmanSyncListener", () => {
   it("stop() clears pending syncs and unsubscribes", () => {
     const listener = createSpoolmanSyncListener({
       createSyncDeps: () => ({}) as any,
-      syncStateRepo: stubSyncStateRepo as any,
       bus,
       log: createTestLogger(),
       getConfig: () => baseConfig,
@@ -105,25 +91,5 @@ describe("SpoolmanSyncListener", () => {
     bus.emit("spool:updated", "TAG-2");
     vi.advanceTimersByTime(2000);
     expect(syncByTagIds).not.toHaveBeenCalled();
-  });
-
-  it("periodically retries errored spools", () => {
-    stubSyncStateRepo.listErrored.mockReturnValue([
-      { tagId: "ERR-1", spoolmanSpoolId: null, lastSynced: null, lastSyncError: "boom" },
-    ]);
-    const listener = createSpoolmanSyncListener({
-      createSyncDeps: () => ({}) as any,
-      syncStateRepo: stubSyncStateRepo as any,
-      bus,
-      log: createTestLogger(),
-      getConfig: () => baseConfig,
-    });
-    listener.start();
-
-    vi.advanceTimersByTime(5 * 60 * 1000);
-    expect(syncByTagIds).toHaveBeenCalledOnce();
-    expect(vi.mocked(syncByTagIds).mock.calls[0][1]).toEqual(["ERR-1"]);
-
-    listener.stop();
   });
 });

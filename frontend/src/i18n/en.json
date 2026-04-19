@@ -180,7 +180,6 @@
       "source_hint": "The mapping is downloaded from {{repo}}.",
       "last_fetched": "Last fetched: {{when}} · {{count}} variants.",
       "never": "never",
-      "refresh_interval": "Refresh interval (hours)",
       "refresh_now": "Refresh mapping now",
       "refreshed": "Mapping refreshed ({{count}} variants)"
     },
@@ -275,9 +274,6 @@
     }
   },
   "spoolman": {
-    "sync_slot": {
-      "done": "Slot synced to Spoolman"
-    },
     "sync_all": {
       "done": "Synced {{synced}} slots ({{skipped}} skipped)",
       "partial": "Synced {{synced}} slots with {{errors}} errors"

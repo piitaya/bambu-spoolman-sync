@@ -90,7 +90,6 @@ export function createServices(
 
   const syncListener = createSpoolmanSyncListener({
     createSyncDeps,
-    syncStateRepo,
     bus,
     log: spoolmanLog,
     getConfig: () => configStore.current,
@@ -110,7 +109,6 @@ export function createServices(
   });
 
   bus.on("config:changed", (config) => {
-    mapping.setInterval(config.filament_catalog.refresh_interval_hours);
     syncPrinters(config.printers, printerPool, bus, mqttLog);
   });
 

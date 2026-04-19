@@ -13,12 +13,6 @@ export const PrinterSchema = Type.Object({
 });
 export const ConfigSchema = Type.Object({
   printers: Type.Array(PrinterSchema, { default: [] }),
-  filament_catalog: Type.Object(
-    {
-      refresh_interval_hours: Type.Integer({ minimum: 1, default: 24 }),
-    },
-    { default: {} },
-  ),
   spoolman: Type.Object(
     {
       url: Type.Optional(Type.String()),

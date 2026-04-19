@@ -60,7 +60,6 @@ export function matchSlot(
 export interface MappingOptions {
   url: string;
   cachePath: string;
-  intervalHours: number;
   onError?: (err: unknown) => void;
 }
 
@@ -68,18 +67,15 @@ export interface Mapping {
   readonly byId: Map<string, CatalogEntry>;
   readonly fetchedAt: Date | null;
   refresh(): Promise<number>;
-  setInterval(hours: number): void;
   stop(): void;
 }
 
-export function mappingCachePath(): string {
-  return resolve(dataDir(), "filaments.json");
-}
+/** Refresh the community catalog once a day. */
+const REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 export async function createMapping(opts: MappingOptions): Promise<Mapping> {
   let byId = new Map<string, CatalogEntry>();
   let fetchedAt: Date | null = null;
-  let intervalHours = opts.intervalHours;
   let timer: NodeJS.Timeout | null = null;
 
   const parseAndSet = (raw: unknown) => {
@@ -127,19 +123,10 @@ export async function createMapping(opts: MappingOptions): Promise<Mapping> {
     return refreshInFlight;
   };
 
-  const scheduleNext = () => {
-    if (timer) clearInterval(timer);
-    const ms = intervalHours * 3_600_000;
-    timer = setInterval(() => {
-      refresh().catch((err) => opts.onError?.(err));
-    }, ms);
-    timer.unref?.();
-  };
-
   const cachedAt = await loadCache();
   fetchedAt = cachedAt;
   const stale =
-    !cachedAt || Date.now() - cachedAt.getTime() > intervalHours * 3_600_000;
+    !cachedAt || Date.now() - cachedAt.getTime() > REFRESH_INTERVAL_MS;
   if (stale) {
     try {
       await refresh();
@@ -147,7 +134,10 @@ export async function createMapping(opts: MappingOptions): Promise<Mapping> {
       opts.onError?.(err);
     }
   }
-  scheduleNext();
+  timer = setInterval(() => {
+    refresh().catch((err) => opts.onError?.(err));
+  }, REFRESH_INTERVAL_MS);
+  timer.unref?.();
 
   return {
     get byId() {
@@ -157,11 +147,6 @@ export async function createMapping(opts: MappingOptions): Promise<Mapping> {
       return fetchedAt;
     },
     refresh,
-    setInterval(hours: number) {
-      if (hours === intervalHours) return;
-      intervalHours = hours;
-      scheduleNext();
-    },
     stop() {
       if (timer) clearInterval(timer);
       timer = null;

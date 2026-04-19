@@ -6,8 +6,8 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { configPath, loadConfig } from "./config.js";
-import { createMapping, mappingCachePath } from "./filament-catalog.js";
+import { configPath, dataDir, loadConfig } from "./config.js";
+import { createMapping } from "./filament-catalog.js";
 import { createServices } from "./composition-root.js";
 import { openDatabase } from "./db/database.js";
 
@@ -60,8 +60,7 @@ export async function buildApp() {
   const config = await loadConfig(cfgPath);
   const mapping = await createMapping({
     url: MAPPING_SOURCE_URL,
-    cachePath: mappingCachePath(),
-    intervalHours: config.filament_catalog.refresh_interval_hours,
+    cachePath: resolve(dataDir(), "filaments.json"),
     onError: (err) => app.log.warn({ err }, "Mapping refresh failed"),
   });
 

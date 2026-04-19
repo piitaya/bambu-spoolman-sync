@@ -89,16 +89,12 @@ export interface SpoolmanClient {
   deleteSpool(spoolId: number): Promise<void>;
 }
 
-function normalizeBaseUrl(raw: string): string {
-  return raw.replace(/\/+$/, "");
-}
-
 export function createSpoolmanClient(
   baseUrl: string,
   fetchImpl: typeof fetch = fetch,
   log?: FastifyBaseLogger,
 ): SpoolmanClient {
-  const base = normalizeBaseUrl(baseUrl);
+  const base = baseUrl.replace(/\/+$/, "");
   let tagFieldRegistered: Promise<void> | null = null;
 
   async function request<T>(
