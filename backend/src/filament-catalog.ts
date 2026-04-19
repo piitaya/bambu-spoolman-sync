@@ -1,14 +1,18 @@
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { readFile, stat } from "node:fs/promises";
 import { Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
-import type { SpoolReading, MatchType, CatalogEntry } from "@bambu-spoolman-sync/shared";
+import type {
+  SpoolReading,
+  SlotMatchType,
+  SpoolMatchType,
+  CatalogEntry,
+} from "@bambu-spoolman-sync/shared";
 import type { ParsedSlot } from "./clients/bambu/types.js";
-import { dataDir } from "./config.js";
+import { atomicWriteFile } from "./utils/atomic-write.js";
 
 export type { CatalogEntry };
 
-export const CatalogEntrySchema = Type.Object({
+const CatalogEntrySchema = Type.Object({
   id: Type.String(),
   code: Type.Optional(Type.String()),
   material: Type.Optional(Type.String()),
@@ -17,17 +21,22 @@ export const CatalogEntrySchema = Type.Object({
   spoolman_id: Type.Optional(Type.Union([Type.String(), Type.Null()])),
 });
 
-export const FilamentsFileSchema = Type.Array(CatalogEntrySchema);
+const FilamentsFileSchema = Type.Array(CatalogEntrySchema);
 
-export interface MatchResult {
-  type: MatchType;
+interface SpoolMatchResult {
+  type: SpoolMatchType;
+  entry?: CatalogEntry;
+}
+
+interface SlotMatchResult {
+  type: SlotMatchType;
   entry?: CatalogEntry;
 }
 
 export function matchSpool(
   spool: Pick<SpoolReading, "variant_id" | "material" | "product">,
   mapping: Map<string, CatalogEntry>,
-): MatchResult {
+): SpoolMatchResult {
   const hasInfo = !!spool.material || !!spool.variant_id || !!spool.product;
   if (!hasInfo) return { type: "unidentified" };
   if (!spool.variant_id) return { type: "third_party" };
@@ -40,7 +49,7 @@ export function matchSpool(
 export function matchSlot(
   slot: ParsedSlot,
   mapping: Map<string, CatalogEntry>,
-): MatchResult {
+): SlotMatchResult {
   if (!slot.has_spool) return { type: "empty" };
   if (!slot.spool) return { type: "unidentified" };
   return matchSpool(slot.spool, mapping);
@@ -49,7 +58,6 @@ export function matchSlot(
 export interface MappingOptions {
   url: string;
   cachePath: string;
-  intervalHours: number;
   onError?: (err: unknown) => void;
 }
 
@@ -57,18 +65,15 @@ export interface Mapping {
   readonly byId: Map<string, CatalogEntry>;
   readonly fetchedAt: Date | null;
   refresh(): Promise<number>;
-  setInterval(hours: number): void;
   stop(): void;
 }
 
-export function mappingCachePath(): string {
-  return resolve(dataDir(), "filaments.json");
-}
+/** Refresh the community catalog once a day. */
+const REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 export async function createMapping(opts: MappingOptions): Promise<Mapping> {
   let byId = new Map<string, CatalogEntry>();
   let fetchedAt: Date | null = null;
-  let intervalHours = opts.intervalHours;
   let timer: NodeJS.Timeout | null = null;
 
   const parseAndSet = (raw: unknown) => {
@@ -90,38 +95,36 @@ export async function createMapping(opts: MappingOptions): Promise<Mapping> {
     }
   };
 
+  let refreshInFlight: Promise<number> | null = null;
   const refresh = async (): Promise<number> => {
-    const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), 15000);
-    try {
-      const res = await fetch(opts.url, { signal: ctrl.signal });
-      if (!res.ok) {
-        throw new Error(`mapping fetch ${res.status} ${res.statusText}`);
+    if (refreshInFlight) return refreshInFlight;
+    const run = async (): Promise<number> => {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 15000);
+      try {
+        const res = await fetch(opts.url, { signal: ctrl.signal });
+        if (!res.ok) {
+          throw new Error(`mapping fetch ${res.status} ${res.statusText}`);
+        }
+        const json = await res.json();
+        const count = parseAndSet(json);
+        fetchedAt = new Date();
+        await atomicWriteFile(opts.cachePath, JSON.stringify(json, null, 2));
+        return count;
+      } finally {
+        clearTimeout(timeout);
       }
-      const json = await res.json();
-      const count = parseAndSet(json);
-      fetchedAt = new Date();
-      await mkdir(dirname(opts.cachePath), { recursive: true });
-      await writeFile(opts.cachePath, JSON.stringify(json, null, 2), "utf-8");
-      return count;
-    } finally {
-      clearTimeout(timeout);
-    }
-  };
-
-  const scheduleNext = () => {
-    if (timer) clearInterval(timer);
-    const ms = intervalHours * 3_600_000;
-    timer = setInterval(() => {
-      refresh().catch((err) => opts.onError?.(err));
-    }, ms);
-    timer.unref?.();
+    };
+    refreshInFlight = run().finally(() => {
+      refreshInFlight = null;
+    });
+    return refreshInFlight;
   };
 
   const cachedAt = await loadCache();
   fetchedAt = cachedAt;
   const stale =
-    !cachedAt || Date.now() - cachedAt.getTime() > intervalHours * 3_600_000;
+    !cachedAt || Date.now() - cachedAt.getTime() > REFRESH_INTERVAL_MS;
   if (stale) {
     try {
       await refresh();
@@ -129,7 +132,10 @@ export async function createMapping(opts: MappingOptions): Promise<Mapping> {
       opts.onError?.(err);
     }
   }
-  scheduleNext();
+  timer = setInterval(() => {
+    refresh().catch((err) => opts.onError?.(err));
+  }, REFRESH_INTERVAL_MS);
+  timer.unref?.();
 
   return {
     get byId() {
@@ -139,11 +145,6 @@ export async function createMapping(opts: MappingOptions): Promise<Mapping> {
       return fetchedAt;
     },
     refresh,
-    setInterval(hours: number) {
-      if (hours === intervalHours) return;
-      intervalHours = hours;
-      scheduleNext();
-    },
     stop() {
       if (timer) clearInterval(timer);
       timer = null;

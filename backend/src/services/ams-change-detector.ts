@@ -25,40 +25,41 @@ export interface AmsChangeDetector {
   stop(): void;
 }
 
+interface LastSeen {
+  tagId: string;
+  signature: string;
+}
+
 export function createAmsChangeDetector(bus: AppEventBus, log: FastifyBaseLogger): AmsChangeDetector {
-  const lastSignature = new Map<string, string>();
-  const lastTagByKey = new Map<string, string>();
+  const lastBySlot = new Map<string, LastSeen>();
 
   const onAmsReported = (_printer: unknown, ams_units: ParsedAmsUnit[]) => {
     for (const unit of ams_units) {
       for (const slot of unit.slots) {
         const key = slotKey(slot);
+        const previous = lastBySlot.get(key);
 
         if (!slot.spool?.tag_id) {
-          const previousTag = lastTagByKey.get(key);
-          if (previousTag) {
+          if (previous) {
             log.debug(
-              { printerSerial: slot.printer_serial, amsId: slot.ams_id, slotId: slot.slot_id, tagId: previousTag },
+              { printerSerial: slot.printer_serial, amsId: slot.ams_id, slotId: slot.slot_id, tagId: previous.tagId },
               "AMS slot emptied",
             );
-            bus.emit("spool:slot-exited", previousTag, slotLocation(slot));
+            bus.emit("spool:slot-exited", previous.tagId, slotLocation(slot));
+            lastBySlot.delete(key);
           }
-          lastSignature.delete(key);
-          lastTagByKey.delete(key);
           continue;
         }
 
-        const sig = slotSignature(slot);
-        if (lastSignature.get(key) === sig) continue;
+        const signature = slotSignature(slot);
+        if (previous?.signature === signature) continue;
 
-        const previousTag = lastTagByKey.get(key);
-        if (previousTag && previousTag !== slot.spool.tag_id) {
+        if (previous && previous.tagId !== slot.spool.tag_id) {
           // A different spool replaced the previous one — emit exit for the old.
-          bus.emit("spool:slot-exited", previousTag, slotLocation(slot));
+          bus.emit("spool:slot-exited", previous.tagId, slotLocation(slot));
         }
 
-        lastSignature.set(key, sig);
-        lastTagByKey.set(key, slot.spool.tag_id);
+        lastBySlot.set(key, { tagId: slot.spool.tag_id, signature });
 
         log.debug(
           { printerSerial: slot.printer_serial, amsId: slot.ams_id, slotId: slot.slot_id, tagId: slot.spool.tag_id },
@@ -80,8 +81,7 @@ export function createAmsChangeDetector(bus: AppEventBus, log: FastifyBaseLogger
     },
     stop() {
       bus.off("ams:reported", onAmsReported);
-      lastSignature.clear();
-      lastTagByKey.clear();
+      lastBySlot.clear();
     },
   };
 }

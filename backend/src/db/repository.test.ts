@@ -28,9 +28,6 @@ describe("SpoolRepository", () => {
     tempMin: null,
     tempMax: null,
     lastUsed: null,
-    lastPrinterSerial: null,
-    lastAmsId: null,
-    lastSlotId: null,
     firstSeen: "2024-01-01T00:00:00.000Z",
     lastUpdated: "2024-01-01T00:00:00.000Z",
   };
@@ -88,9 +85,6 @@ describe("SyncStateRepository", () => {
     tempMin: null,
     tempMax: null,
     lastUsed: null,
-    lastPrinterSerial: null,
-    lastAmsId: null,
-    lastSlotId: null,
     firstSeen: "2024-01-01T00:00:00.000Z",
     lastUpdated: "2024-01-01T00:00:00.000Z",
   };

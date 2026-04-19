@@ -6,8 +6,8 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { configPath, loadConfig } from "./config.js";
-import { createMapping, mappingCachePath } from "./filament-catalog.js";
+import { configPath, dataDir, loadConfig } from "./config.js";
+import { createMapping } from "./filament-catalog.js";
 import { createServices } from "./composition-root.js";
 import { openDatabase } from "./db/database.js";
 
@@ -44,7 +44,12 @@ export async function buildApp() {
     openapi: {
       info: {
         title: "Bambu Spoolman Sync",
-        description: "Sync Bambu Lab AMS spool data with Spoolman",
+        description:
+          "Sync Bambu Lab AMS spool data with Spoolman.\n\n" +
+          "**Security posture.** This API has no authentication and no rate limiting. " +
+          "It is intended to run on a trusted local network (e.g. the same LAN as your printer " +
+          "and Spoolman instance). Do not expose it to the public internet. If you need remote " +
+          "access, put it behind a reverse proxy with auth (tailscale, nginx+basic auth, etc.).",
         version: "0.1.0",
       },
     },
@@ -55,8 +60,7 @@ export async function buildApp() {
   const config = await loadConfig(cfgPath);
   const mapping = await createMapping({
     url: MAPPING_SOURCE_URL,
-    cachePath: mappingCachePath(),
-    intervalHours: config.filament_catalog.refresh_interval_hours,
+    cachePath: resolve(dataDir(), "filaments.json"),
     onError: (err) => app.log.warn({ err }, "Mapping refresh failed"),
   });
 

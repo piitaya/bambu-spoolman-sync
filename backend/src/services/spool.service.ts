@@ -4,11 +4,7 @@ import type { SyncStateRepository, SpoolSyncStateRow } from "../db/sync-state.re
 import type { Mapping } from "../filament-catalog.js";
 import { matchSpool } from "../filament-catalog.js";
 import type { FastifyBaseLogger } from "fastify";
-import type { AppEventBus, SlotLocation } from "../events.js";
-
-function hasTagId(data: SpoolReading): data is SpoolReading & { tag_id: string } {
-  return !!data.tag_id;
-}
+import type { AppEventBus } from "../events.js";
 
 function isStringArray(arr: unknown[]): arr is string[] {
   return arr.every((v) => typeof v === "string");
@@ -77,8 +73,12 @@ function enrichSpool(
 
 export interface UpsertOptions {
   lastUsed?: string;
-  location?: SlotLocation;
   source?: "ams" | "scan";
+}
+
+export interface UpsertResult {
+  spool: Spool;
+  created: boolean;
 }
 
 export interface SpoolService {
@@ -87,7 +87,7 @@ export interface SpoolService {
   delete(tagId: string): boolean;
   listTagIds(): string[];
   patch(tagId: string, data: { remain?: number }): Spool | undefined;
-  upsert(data: SpoolReading, options?: UpsertOptions): void;
+  upsert(data: SpoolReading, options?: UpsertOptions): UpsertResult | undefined;
 }
 
 export interface SpoolServiceDeps {
@@ -120,13 +120,13 @@ export function createSpoolService(deps: SpoolServiceDeps): SpoolService {
     },
 
     patch(tagId, data) {
-      if (!spoolRepo.findByTagId(tagId)) return undefined;
-      const now = new Date().toISOString();
-      spoolRepo.update(tagId, { ...data, lastUpdated: now });
+      const before = spoolRepo.findByTagId(tagId);
+      if (!before) return undefined;
+      spoolRepo.update(tagId, data);
       log.info({ tagId, ...data }, "Spool updated manually");
       bus.emit("spool:adjusted", tagId);
       bus.emit("spool:updated", tagId);
-      const row = spoolRepo.findByTagId(tagId)!;
+      const row = { ...before, ...data, lastUpdated: new Date().toISOString() };
       const syncRow = syncStateRepo.findByTagId(tagId);
       return enrichSpool(row, syncRow, mapping.byId);
     },
@@ -142,16 +142,17 @@ export function createSpoolService(deps: SpoolServiceDeps): SpoolService {
     },
 
     upsert(data, options) {
-      if (!hasTagId(data)) return;
-      const now = new Date().toISOString();
-      const existing = spoolRepo.findByTagId(data.tag_id);
-
+      if (!data.tag_id) return undefined;
+      const tagId = data.tag_id;
+      const existing = spoolRepo.findByTagId(tagId);
       const colorHexes = serializeColorHexes(data.color_hexes);
-      const loc = options?.location;
+      const source = options?.source;
+
+      let row: SpoolRow;
+      let created = false;
 
       if (existing) {
-        log.debug({ tagId: data.tag_id, remain: data.remain }, "Spool updated");
-        spoolRepo.update(data.tag_id, {
+        const next = {
           variantId: data.variant_id ?? existing.variantId,
           material: data.material ?? existing.material,
           product: data.product ?? existing.product,
@@ -162,17 +163,30 @@ export function createSpoolService(deps: SpoolServiceDeps): SpoolService {
           tempMin: data.temp_min ?? existing.tempMin,
           tempMax: data.temp_max ?? existing.tempMax,
           lastUsed: options?.lastUsed ?? existing.lastUsed,
-          ...(loc && {
-            lastPrinterSerial: loc.printer_serial,
-            lastAmsId: loc.ams_id,
-            lastSlotId: loc.slot_id,
-          }),
-          lastUpdated: now,
-        });
+        };
+
+        // Identity fields (material, colours, temps, capacity) are stamped on
+        // the RFID chip and don't change, so `remain` and `lastUsed` are the
+        // only fields we need to check for a no-op.
+        const changed =
+          next.remain !== existing.remain ||
+          next.lastUsed !== existing.lastUsed;
+
+        if (!changed) {
+          if (source === "scan") bus.emit("spool:scanned", tagId);
+          const syncRow = syncStateRepo.findByTagId(tagId);
+          return { spool: enrichSpool(existing, syncRow, mapping.byId), created: false };
+        }
+
+        spoolRepo.update(tagId, next);
+        // $onUpdate auto-bumps lastUpdated in the DB; mirror it in-memory for
+        // the return value without a second read.
+        row = { ...existing, ...next, lastUpdated: new Date().toISOString() };
       } else {
-        log.info({ tagId: data.tag_id, material: data.material, product: data.product }, "New spool detected");
-        spoolRepo.create({
-          tagId: data.tag_id,
+        log.info({ tagId, material: data.material, product: data.product }, "New spool detected");
+        const nowIso = new Date().toISOString();
+        row = {
+          tagId,
           variantId: data.variant_id,
           material: data.material,
           product: data.product,
@@ -182,19 +196,19 @@ export function createSpoolService(deps: SpoolServiceDeps): SpoolService {
           remain: data.remain,
           tempMin: data.temp_min,
           tempMax: data.temp_max,
-          lastUsed: options?.lastUsed,
-          lastPrinterSerial: loc?.printer_serial ?? null,
-          lastAmsId: loc?.ams_id ?? null,
-          lastSlotId: loc?.slot_id ?? null,
-          lastUpdated: now,
-          firstSeen: now,
-        });
+          lastUsed: options?.lastUsed ?? null,
+          firstSeen: nowIso,
+          lastUpdated: nowIso,
+        };
+        spoolRepo.create(row);
+        created = true;
       }
 
-      if (options?.source === "scan") {
-        bus.emit("spool:scanned", data.tag_id);
-      }
-      bus.emit("spool:updated", data.tag_id);
+      if (source === "scan") bus.emit("spool:scanned", tagId);
+      bus.emit("spool:updated", tagId);
+
+      const syncRow = syncStateRepo.findByTagId(tagId);
+      return { spool: enrichSpool(row, syncRow, mapping.byId), created };
     },
   };
 }
