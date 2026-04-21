@@ -45,7 +45,7 @@ export interface CatalogEntry {
   weight: number | null;
   temp_min: number | null;
   temp_max: number | null;
-  integrations: Record<string, string>;
+  integrations: Record<string, string | null>;
 }
 
 // ---------------------------------------------------------------------------

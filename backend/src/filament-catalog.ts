@@ -24,7 +24,7 @@ const CatalogEntrySchema = Type.Object({
   weight: NullableNumber,
   temp_min: NullableNumber,
   temp_max: NullableNumber,
-  integrations: Type.Record(Type.String(), Type.String()),
+  integrations: Type.Record(Type.String(), NullableString),
 });
 
 const FilamentsFileSchema = Type.Array(CatalogEntrySchema);
