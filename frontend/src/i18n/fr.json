@@ -273,6 +273,10 @@
     "notifications": {
       "removed": "Bobine retirée",
       "updated": "Bobine mise à jour"
+    },
+    "view": {
+      "table": "Tableau",
+      "grid": "Grille"
     }
   },
   "color_family": {

@@ -15,6 +15,8 @@ import {
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import {
   IconFilter,
+  IconLayoutGrid,
+  IconLayoutList,
   IconSearch,
   IconSortAscending,
   IconSortDescending,
@@ -241,8 +243,12 @@ export function SpoolFilterPanel({
   );
 }
 
+export type SpoolView = "table" | "grid";
+
 interface Props extends PanelProps {
   loadedTags: ReadonlySet<string>;
+  view: SpoolView;
+  onViewChange: (view: SpoolView) => void;
 }
 
 /**
@@ -257,6 +263,8 @@ export function SpoolToolbar(props: Props) {
     onFiltersChange,
     sort,
     onSortChange,
+    view,
+    onViewChange,
   } = props;
   const { t } = useTranslation();
   const isMobile = useMediaQuery("(max-width: 48em)") ?? false;
@@ -293,7 +301,7 @@ export function SpoolToolbar(props: Props) {
           }
           style={{ flex: 1 }}
         />
-        {isMobile && (
+        {isMobile ? (
           <Button
             variant={facetCount > 0 ? "filled" : "default"}
             leftSection={<IconFilter size={14} />}
@@ -310,6 +318,29 @@ export function SpoolToolbar(props: Props) {
               t("spools.filters.label")
             )}
           </Button>
+        ) : (
+          <SegmentedControl
+            value={view}
+            onChange={(v) => onViewChange(v as SpoolView)}
+            data={[
+              {
+                value: "table",
+                label: (
+                  <Tooltip label={t("spools.view.table")}>
+                    <IconLayoutList size={16} />
+                  </Tooltip>
+                ),
+              },
+              {
+                value: "grid",
+                label: (
+                  <Tooltip label={t("spools.view.grid")}>
+                    <IconLayoutGrid size={16} />
+                  </Tooltip>
+                ),
+              },
+            ]}
+          />
         )}
       </Group>
 

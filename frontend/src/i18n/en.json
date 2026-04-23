@@ -273,6 +273,10 @@
     "notifications": {
       "removed": "Spool removed",
       "updated": "Spool updated"
+    },
+    "view": {
+      "table": "Table",
+      "grid": "Grid"
     }
   },
   "color_family": {
