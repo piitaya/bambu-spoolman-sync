@@ -44,10 +44,15 @@ export default function Layout() {
     <Box style={{ display: "flex", flexDirection: "column", height: "100dvh" }}>
       <Box
         component="header"
-        p="sm"
         style={{
           flexShrink: 0,
-          height: HEADER_HEIGHT,
+          height: `calc(${HEADER_HEIGHT}px + env(safe-area-inset-top))`,
+          paddingTop: "calc(var(--mantine-spacing-sm) + env(safe-area-inset-top))",
+          paddingBottom: "var(--mantine-spacing-sm)",
+          paddingLeft:
+            "calc(var(--mantine-spacing-sm) + env(safe-area-inset-left))",
+          paddingRight:
+            "calc(var(--mantine-spacing-sm) + env(safe-area-inset-right))",
           borderBottom: "1px solid var(--mantine-color-default-border)",
           background: "var(--mantine-color-body)",
         }}
@@ -86,7 +91,16 @@ export default function Layout() {
           </Tooltip>
         </Group>
       </Box>
-      <Box component="main" style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
+      <Box
+        component="main"
+        style={{
+          flex: 1,
+          overflow: "hidden",
+          minHeight: 0,
+          paddingLeft: "env(safe-area-inset-left)",
+          paddingRight: "env(safe-area-inset-right)",
+        }}
+      >
         <ErrorBoundary>
           <Outlet />
         </ErrorBoundary>
@@ -96,7 +110,10 @@ export default function Layout() {
           component="footer"
           style={{
             flexShrink: 0,
-            height: BOTTOM_BAR_HEIGHT,
+            height: `calc(${BOTTOM_BAR_HEIGHT}px + env(safe-area-inset-bottom))`,
+            paddingBottom: "env(safe-area-inset-bottom)",
+            paddingLeft: "env(safe-area-inset-left)",
+            paddingRight: "env(safe-area-inset-right)",
             borderTop: "1px solid var(--mantine-color-default-border)",
             background: "var(--mantine-color-body)",
           }}
