@@ -4,13 +4,14 @@
 // are valid filament colors we must render as-is.
 export function swatchFill(hex: string | null | undefined): string | null {
   if (!hex || hex === "00000000") return null;
-  return `#${hex.slice(0, 6)}`;
+  const clean = hex.replace(/^#/, "").slice(0, 6);
+  return clean.length > 0 ? `#${clean}` : null;
 }
 
 /**
  * Returns a CSS `background` value for a filament's color(s): a single color
- * string when there's one hex, a hard-stop horizontal linear gradient when
- * there are multiple (e.g. bicolor PLA). Returns null when no valid colors.
+ * string when there's one hex, a hard-stop 135° linear gradient when there are
+ * multiple (e.g. bicolor PLA). Returns null when no valid colors.
  */
 export function swatchBackground(
   hexes: ReadonlyArray<string | null | undefined>,
@@ -30,16 +31,14 @@ export function swatchBackground(
 }
 
 interface Props {
-  hex?: string | null;
-  hexes?: ReadonlyArray<string | null | undefined>;
+  hexes: ReadonlyArray<string | null | undefined>;
   size?: number;
   /** Render as a circle instead of a rounded square. */
   round?: boolean;
 }
 
-export function ColorSwatch({ hex, hexes, size = 20, round = false }: Props) {
-  const source = hexes && hexes.length > 0 ? hexes : hex != null ? [hex] : [];
-  const background = swatchBackground(source);
+export function ColorSwatch({ hexes, size = 20, round = false }: Props) {
+  const background = swatchBackground(hexes);
 
   const borderRadius = round ? "50%" : size >= 32 ? 6 : 4;
   const common = {
@@ -54,9 +53,9 @@ export function ColorSwatch({ hex, hexes, size = 20, round = false }: Props) {
       <div
         style={{
           ...common,
-          border: "1px dashed #cbd5e1",
+          border: "1px dashed var(--mantine-color-default-border)",
           background:
-            "repeating-linear-gradient(45deg, #f8fafc, #f8fafc 4px, #e2e8f0 4px, #e2e8f0 8px)",
+            "repeating-linear-gradient(45deg, var(--mantine-color-default), var(--mantine-color-default) 4px, var(--mantine-color-gray-3) 4px, var(--mantine-color-gray-3) 8px)",
         }}
       />
     );
@@ -67,7 +66,7 @@ export function ColorSwatch({ hex, hexes, size = 20, round = false }: Props) {
       style={{
         ...common,
         background,
-        border: "1px solid #ddd",
+        border: "1px solid var(--mantine-color-default-border)",
       }}
     />
   );

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { Spool } from "../api";
 import { formatGrams } from "../lib/format";
 import { swatchBackground } from "./ColorSwatch";
+import { spoolHexes } from "./spoolLabel";
 import { remainingGrams } from "./SpoolToolbar";
 import { spoolFillColor } from "./spoolFillColor";
 
@@ -15,13 +16,9 @@ export function SpoolGrid({ spools }: Props) {
   return (
     <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
       {spools.map((spool) => {
-        const hexes = spool.color_hexes?.length
-          ? spool.color_hexes
-          : spool.color_hex
-            ? [spool.color_hex]
-            : [];
         const bandBackground =
-          swatchBackground(hexes) ?? "var(--mantine-color-gray-2)";
+          swatchBackground(spoolHexes(spool)) ??
+          "var(--mantine-color-gray-2)";
         return (
         <Card
           key={spool.tag_id}

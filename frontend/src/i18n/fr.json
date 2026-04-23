@@ -257,7 +257,7 @@
         "full": "Pleine"
       },
       "ams_only": "Uniquement dans l'AMS",
-      "weight_unknown": "Uniquement sans poids défini"
+      "no_remain": "Uniquement sans stock connu"
     },
     "sort": {
       "label": "Trier par",

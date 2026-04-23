@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import type { Spool } from "../api";
 import { formatGrams } from "../lib/format";
 import { ColorSwatch } from "./ColorSwatch";
-import { spoolLabels } from "./spoolLabel";
+import { spoolHexes, spoolLabels } from "./spoolLabel";
 import { remainingGrams } from "./SpoolToolbar";
 import { spoolFillColor } from "./spoolFillColor";
 
@@ -40,12 +40,7 @@ export function SpoolList({ spools }: Props) {
           }}
         >
           <Group gap="md" wrap="nowrap" align="center">
-            <ColorSwatch
-              hex={spool.color_hex}
-              hexes={spool.color_hexes ?? undefined}
-              size={24}
-              round
-            />
+            <ColorSwatch hexes={spoolHexes(spool)} size={24} round />
             <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
               <Text
                 size="sm"

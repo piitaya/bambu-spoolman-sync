@@ -257,7 +257,7 @@
         "full": "Full"
       },
       "ams_only": "Only spools in AMS",
-      "weight_unknown": "Only spools with unknown weight"
+      "no_remain": "Only spools with unknown stock"
     },
     "sort": {
       "label": "Sort by",

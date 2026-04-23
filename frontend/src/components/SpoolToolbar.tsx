@@ -33,22 +33,9 @@ import {
   colorFamily,
   type ColorFamily,
 } from "../lib/colorFamily";
+import { ColorSwatch } from "./ColorSwatch";
 import { PillPicker } from "./PillPicker";
-
-function FamilySwatch({ family, size = 12 }: { family: ColorFamily; size?: number }) {
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 3,
-        background: FAMILY_HEX[family],
-        border: "1px solid rgba(0,0,0,0.12)",
-        flexShrink: 0,
-      }}
-    />
-  );
-}
+import { spoolHexes } from "./spoolLabel";
 
 type SpoolStockLevel = "all" | "low" | "full";
 
@@ -89,7 +76,7 @@ export interface SpoolFilters {
   colorFamilies: ColorFamily[];
   stock: SpoolStockLevel;
   amsOnly: boolean;
-  weightUnknown: boolean;
+  noRemain: boolean;
 }
 
 export const EMPTY_FILTERS: SpoolFilters = {
@@ -99,7 +86,7 @@ export const EMPTY_FILTERS: SpoolFilters = {
   colorFamilies: [],
   stock: "all",
   amsOnly: false,
-  weightUnknown: false,
+  noRemain: false,
 };
 
 function facetsAreActive(f: SpoolFilters): boolean {
@@ -109,7 +96,7 @@ function facetsAreActive(f: SpoolFilters): boolean {
     f.colorFamilies.length > 0 ||
     f.stock !== "all" ||
     f.amsOnly ||
-    f.weightUnknown
+    f.noRemain
   );
 }
 
@@ -121,7 +108,7 @@ function clearFacets(f: SpoolFilters): SpoolFilters {
     colorFamilies: [],
     stock: "all",
     amsOnly: false,
-    weightUnknown: false,
+    noRemain: false,
   };
 }
 
@@ -221,7 +208,9 @@ export function SpoolFilterPanel({
         onChange={(v) => update("colorFamilies", v)}
         options={availableFamilies}
         getLabel={(v) => t(`color_family.${v}`)}
-        renderAdornment={(v) => <FamilySwatch family={v} size={12} />}
+        renderAdornment={(v) => (
+          <ColorSwatch hexes={[FAMILY_HEX[v]]} size={12} />
+        )}
       />
       <Stack gap={6}>
         <Text size="sm" fw={500}>
@@ -244,9 +233,9 @@ export function SpoolFilterPanel({
         onChange={(e) => update("amsOnly", e.currentTarget.checked)}
       />
       <Switch
-        label={t("spools.filters.weight_unknown")}
-        checked={filters.weightUnknown}
-        onChange={(e) => update("weightUnknown", e.currentTarget.checked)}
+        label={t("spools.filters.no_remain")}
+        checked={filters.noRemain}
+        onChange={(e) => update("noRemain", e.currentTarget.checked)}
       />
       {facetsAreActive(filters) && (
         <Button
@@ -295,7 +284,7 @@ export function SpoolToolbar(props: Props) {
     filters.colorFamilies.length +
     (filters.stock !== "all" ? 1 : 0) +
     (filters.amsOnly ? 1 : 0) +
-    (filters.weightUnknown ? 1 : 0);
+    (filters.noRemain ? 1 : 0);
 
   return (
     <>
@@ -401,8 +390,10 @@ function deriveOptions(spools: readonly Spool[]) {
   for (const s of spools) {
     if (s.material) materials.add(s.material);
     if (s.product) products.add(s.product);
-    const fam = colorFamily(s.color_hex);
-    if (fam) families.add(fam);
+    for (const h of spoolHexes(s)) {
+      const fam = colorFamily(h);
+      if (fam) families.add(fam);
+    }
   }
   return {
     materials: [...materials].sort(),
@@ -457,7 +448,7 @@ export function spoolStateToSearchParams(
   if (filters.colorFamilies.length) p.set("color", filters.colorFamilies.join(","));
   if (filters.stock !== "all") p.set("stock", filters.stock);
   if (filters.amsOnly) p.set("ams", "1");
-  if (filters.weightUnknown) p.set("noweight", "1");
+  if (filters.noRemain) p.set("noremain", "1");
   if (sort.field !== DEFAULT_SORT.field || sort.direction !== DEFAULT_SORT.direction) {
     p.set("sort", `${sort.field}:${sort.direction}`);
   }
@@ -495,7 +486,7 @@ export function searchParamsToSpoolState(params: URLSearchParams): {
     ),
     stock,
     amsOnly: params.get("ams") === "1",
-    weightUnknown: params.get("noweight") === "1",
+    noRemain: params.get("noremain") === "1",
   };
   const sortParam = params.get("sort");
   let sort: SpoolSort = DEFAULT_SORT;
@@ -536,8 +527,10 @@ export function applySpoolFilters(
       if (!s.product || !filters.products.includes(s.product)) continue;
     }
     if (filters.colorFamilies.length > 0) {
-      const fam = colorFamily(s.color_hex);
-      if (!fam || !filters.colorFamilies.includes(fam)) continue;
+      const fams = spoolHexes(s)
+        .map(colorFamily)
+        .filter((f): f is ColorFamily => f !== null);
+      if (!fams.some((f) => filters.colorFamilies.includes(f))) continue;
     }
     switch (filters.stock) {
       case "low":
@@ -548,7 +541,7 @@ export function applySpoolFilters(
         break;
     }
     if (filters.amsOnly && !loadedTags.has(s.tag_id)) continue;
-    if (filters.weightUnknown && s.weight != null) continue;
+    if (filters.noRemain && s.remain != null) continue;
     out.push(s);
   }
   return out;

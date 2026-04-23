@@ -10,6 +10,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import { AmsSlotDetailModal } from "./AmsSlotDetailModal";
 import { ColorSwatch } from "./ColorSwatch";
+import { spoolHexes } from "./spoolLabel";
 import { useMatchStatus } from "./matchStatus";
 import { spoolFillColor } from "./spoolFillColor";
 import { spoolLabels } from "./spoolLabel";
@@ -114,11 +115,9 @@ export function AmsSlotCard({ s }: { s: AmsSlot }) {
         <Stack gap="sm">
           <Group gap="sm" align="flex-start" wrap="nowrap">
             <ColorSwatch
-              hex={isEmpty || isUnknownSpool ? null : sp?.color_hex}
-              hexes={
-                isEmpty || isUnknownSpool ? undefined : sp?.color_hexes ?? undefined
-              }
+              hexes={isEmpty || isUnknownSpool || !sp ? [] : spoolHexes(sp)}
               size={36}
+              round
             />
             <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
               <Text

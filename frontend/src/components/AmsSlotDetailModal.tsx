@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { amsLabel } from "./amsLabel";
 import { ColorSwatch } from "./ColorSwatch";
+import { spoolHexes } from "./spoolLabel";
 import { Plain, Row } from "./DetailTable";
 import { ResponsiveDetailModal } from "./ResponsiveDetailModal";
 import { CopyableMono } from "./CopyableMono";
@@ -53,10 +54,7 @@ function ReadingSection({ slot }: { slot: AmsSlot }) {
               label={t("slot.fields.color_name")}
               value={
                 <Group gap={8} wrap="nowrap">
-                  <ColorSwatch
-                    hex={sp.color_hex}
-                    hexes={sp.color_hexes ?? undefined}
-                  />
+                  <ColorSwatch hexes={spoolHexes(sp)} round />
                   {slot.color_name && (
                     <Text size="sm" truncate>{slot.color_name}</Text>
                   )}
@@ -155,11 +153,7 @@ function LinkedSpoolCard({ spool, onClose }: { spool: Spool; onClose: () => void
     <Card withBorder padding="sm" radius="md">
       <Stack gap={4}>
         <Group gap="sm" wrap="nowrap" align="flex-start">
-          <ColorSwatch
-            hex={spool.color_hex}
-            hexes={spool.color_hexes ?? undefined}
-            size={32}
-          />
+          <ColorSwatch hexes={spoolHexes(spool)} size={32} round />
           <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
             <Text
               size="sm"

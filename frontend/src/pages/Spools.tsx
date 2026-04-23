@@ -22,6 +22,7 @@ import { useLoadedTagIds, useSpools } from "../hooks";
 import { useIsMobile } from "../lib/breakpoints";
 import { formatGrams } from "../lib/format";
 import { ColorSwatch } from "../components/ColorSwatch";
+import { spoolHexes } from "../components/spoolLabel";
 import { spoolFillColor } from "../components/spoolFillColor";
 import { EmptyStateCard } from "../components/EmptyStateCard";
 import { PageShell } from "../components/PageShell";
@@ -266,8 +267,7 @@ export default function SpoolsPage() {
                   width: 40,
                   render: (spool) => (
                     <ColorSwatch
-                      hex={spool.color_hex}
-                      hexes={spool.color_hexes ?? undefined}
+                      hexes={spoolHexes(spool)}
                       size={24}
                       round
                     />

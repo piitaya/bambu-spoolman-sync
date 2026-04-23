@@ -1,3 +1,16 @@
+/**
+ * Normalizes a spool's color fields into a single array for the swatch.
+ * Prefers the multi-color list when present, falls back to the single hex.
+ */
+export function spoolHexes(spool: {
+  color_hex?: string | null;
+  color_hexes?: string[] | null;
+}): readonly string[] {
+  if (spool.color_hexes && spool.color_hexes.length > 0) return spool.color_hexes;
+  if (spool.color_hex) return [spool.color_hex];
+  return [];
+}
+
 export interface SpoolLabels {
   primary: string;
   // "code" when `primary` is a variant id or tag id; "text" otherwise.
