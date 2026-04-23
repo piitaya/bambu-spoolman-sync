@@ -113,7 +113,13 @@ export function AmsSlotCard({ s }: { s: AmsSlot }) {
         </Group>
         <Stack gap="sm">
           <Group gap="sm" align="flex-start" wrap="nowrap">
-            <ColorSwatch hex={isEmpty || isUnknownSpool ? null : sp?.color_hex} size={36} />
+            <ColorSwatch
+              hex={isEmpty || isUnknownSpool ? null : sp?.color_hex}
+              hexes={
+                isEmpty || isUnknownSpool ? undefined : sp?.color_hexes ?? undefined
+              }
+              size={36}
+            />
             <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
               <Text
                 size="sm"

@@ -4,9 +4,26 @@ import classes from "./SpoolIllustration.module.css";
 
 export interface SpoolIllustrationProps {
   hex: string | null | undefined;
+  /** Catalog color list — when 2+ colors, coil is drawn as pie slices. */
+  hexes?: ReadonlyArray<string | null | undefined> | null;
   /** Remaining percent, 0–100. `null` renders an empty spool. */
   remain: number | null;
   size?: number;
+}
+
+function pieSlicePath(
+  cx: number,
+  cy: number,
+  r: number,
+  startA: number,
+  endA: number,
+): string {
+  const x1 = cx + r * Math.cos(startA);
+  const y1 = cy + r * Math.sin(startA);
+  const x2 = cx + r * Math.cos(endA);
+  const y2 = cy + r * Math.sin(endA);
+  const largeArc = endA - startA > Math.PI ? 1 : 0;
+  return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
 }
 
 const CX = 100;
@@ -68,9 +85,12 @@ const NOTCHES: ReadonlyArray<{ x: number; y: number }> = (() => {
  * the wound filament is visible; back flange rendered as a halftone-perforated
  * disc. Filament is a colored donut — hub drawn on top hides its centre.
  */
-export function SpoolIllustration({ hex, remain, size = 180 }: SpoolIllustrationProps) {
+export function SpoolIllustration({ hex, hexes, remain, size = 180 }: SpoolIllustrationProps) {
   const uid = useId().replace(/:/g, "");
-  const base = normalizeHex(hex);
+  const bases = (hexes && hexes.length > 0 ? hexes : [hex]).map((h) =>
+    normalizeHex(h),
+  );
+  const base = bases[0];
   const pct = remain == null ? 0 : Math.max(0, Math.min(100, remain)) / 100;
   const rCoil = R_COIL_MIN + (R_COIL_MAX - R_COIL_MIN) * pct;
 
@@ -92,11 +112,19 @@ export function SpoolIllustration({ hex, remain, size = 180 }: SpoolIllustration
       aria-hidden="true"
     >
       <defs>
-        <radialGradient id={`coil-${uid}`} cx="42%" cy="40%" r="72%">
-          <stop offset="0%" stopColor={shade(base, 0.18)} />
-          <stop offset="55%" stopColor={base} />
-          <stop offset="100%" stopColor={shade(base, -0.18)} />
-        </radialGradient>
+        {bases.map((c, i) => (
+          <radialGradient
+            key={i}
+            id={`coil-${uid}-${i}`}
+            cx="42%"
+            cy="40%"
+            r="72%"
+          >
+            <stop offset="0%" stopColor={shade(c, 0.18)} />
+            <stop offset="55%" stopColor={c} />
+            <stop offset="100%" stopColor={shade(c, -0.18)} />
+          </radialGradient>
+        ))}
       </defs>
 
       <ellipse
@@ -134,7 +162,24 @@ export function SpoolIllustration({ hex, remain, size = 180 }: SpoolIllustration
 
       {pct > 0 && (
         <>
-          <circle cx={CX} cy={CY} r={rCoil} fill={`url(#coil-${uid})`} />
+          {bases.length === 1 ? (
+            <circle cx={CX} cy={CY} r={rCoil} fill={`url(#coil-${uid}-0)`} />
+          ) : (
+            bases.map((_, i) => {
+              // Start at bottom-left (3π/4) so the primary color fills the
+              // top-left half — matches the 135° swatch gradient direction.
+              const offset = (3 * Math.PI) / 4;
+              const startA = (i / bases.length) * 2 * Math.PI + offset;
+              const endA = ((i + 1) / bases.length) * 2 * Math.PI + offset;
+              return (
+                <path
+                  key={i}
+                  d={pieSlicePath(CX, CY, rCoil, startA, endA)}
+                  fill={`url(#coil-${uid}-${i})`}
+                />
+              );
+            })
+          )}
           {windings.map((r, i) => (
             <circle
               key={i}

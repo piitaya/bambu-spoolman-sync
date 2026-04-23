@@ -53,7 +53,10 @@ function ReadingSection({ slot }: { slot: AmsSlot }) {
               label={t("slot.fields.color_name")}
               value={
                 <Group gap={8} wrap="nowrap">
-                  <ColorSwatch hex={sp.color_hex} />
+                  <ColorSwatch
+                    hex={sp.color_hex}
+                    hexes={sp.color_hexes ?? undefined}
+                  />
                   {slot.color_name && (
                     <Text size="sm" truncate>{slot.color_name}</Text>
                   )}
@@ -152,7 +155,11 @@ function LinkedSpoolCard({ spool, onClose }: { spool: Spool; onClose: () => void
     <Card withBorder padding="sm" radius="md">
       <Stack gap={4}>
         <Group gap="sm" wrap="nowrap" align="flex-start">
-          <ColorSwatch hex={spool.color_hex} size={32} />
+          <ColorSwatch
+            hex={spool.color_hex}
+            hexes={spool.color_hexes ?? undefined}
+            size={32}
+          />
           <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
             <Text
               size="sm"

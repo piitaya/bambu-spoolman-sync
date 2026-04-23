@@ -1,6 +1,5 @@
 import {
   Box,
-  ColorSwatch,
   Group,
   Progress,
   Stack,
@@ -10,6 +9,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import type { Spool } from "../api";
 import { formatGrams } from "../lib/format";
+import { ColorSwatch } from "./ColorSwatch";
 import { spoolLabels } from "./spoolLabel";
 import { remainingGrams } from "./SpoolToolbar";
 import { spoolFillColor } from "./spoolFillColor";
@@ -40,11 +40,12 @@ export function SpoolList({ spools }: Props) {
           }}
         >
           <Group gap="md" wrap="nowrap" align="center">
-            {spool.color_hex ? (
-              <ColorSwatch color={`#${spool.color_hex}`} size={24} />
-            ) : (
-              <Box w={24} h={24} style={{ flexShrink: 0 }} />
-            )}
+            <ColorSwatch
+              hex={spool.color_hex}
+              hexes={spool.color_hexes ?? undefined}
+              size={24}
+              round
+            />
             <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
               <Text
                 size="sm"

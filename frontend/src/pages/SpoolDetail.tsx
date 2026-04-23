@@ -109,6 +109,7 @@ export default function SpoolDetailPage() {
             >
               <SpoolIllustration
                 hex={heroHex}
+                hexes={spool.color_hexes}
                 remain={spool.remain}
                 size={120}
               />

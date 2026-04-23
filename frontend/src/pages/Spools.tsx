@@ -1,7 +1,6 @@
 import {
   Alert,
   Box,
-  ColorSwatch,
   Group,
   Loader,
   Progress,
@@ -22,6 +21,7 @@ import type { Spool } from "../api";
 import { useLoadedTagIds, useSpools } from "../hooks";
 import { useIsMobile } from "../lib/breakpoints";
 import { formatGrams } from "../lib/format";
+import { ColorSwatch } from "../components/ColorSwatch";
 import { spoolFillColor } from "../components/spoolFillColor";
 import { EmptyStateCard } from "../components/EmptyStateCard";
 import { PageShell } from "../components/PageShell";
@@ -264,12 +264,14 @@ export default function SpoolsPage() {
                   title: "",
                   sortable: false,
                   width: 40,
-                  render: (spool) =>
-                    spool.color_hex ? (
-                      <ColorSwatch color={`#${spool.color_hex}`} size={24} />
-                    ) : (
-                      <Text c="dimmed" size="sm">—</Text>
-                    ),
+                  render: (spool) => (
+                    <ColorSwatch
+                      hex={spool.color_hex}
+                      hexes={spool.color_hexes ?? undefined}
+                      size={24}
+                      round
+                    />
+                  ),
                 },
                 {
                   accessor: "color_name",

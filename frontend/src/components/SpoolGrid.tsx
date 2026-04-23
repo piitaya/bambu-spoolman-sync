@@ -2,6 +2,7 @@ import { Badge, Card, Group, Progress, SimpleGrid, Stack, Text } from "@mantine/
 import { useNavigate } from "react-router-dom";
 import type { Spool } from "../api";
 import { formatGrams } from "../lib/format";
+import { swatchBackground } from "./ColorSwatch";
 import { remainingGrams } from "./SpoolToolbar";
 import { spoolFillColor } from "./spoolFillColor";
 
@@ -13,7 +14,15 @@ export function SpoolGrid({ spools }: Props) {
   const navigate = useNavigate();
   return (
     <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
-      {spools.map((spool) => (
+      {spools.map((spool) => {
+        const hexes = spool.color_hexes?.length
+          ? spool.color_hexes
+          : spool.color_hex
+            ? [spool.color_hex]
+            : [];
+        const bandBackground =
+          swatchBackground(hexes) ?? "var(--mantine-color-gray-2)";
+        return (
         <Card
           key={spool.tag_id}
           withBorder
@@ -23,14 +32,7 @@ export function SpoolGrid({ spools }: Props) {
           style={{ cursor: "pointer" }}
         >
           <Card.Section>
-            <div
-              style={{
-                height: 72,
-                background: spool.color_hex
-                  ? `#${spool.color_hex}`
-                  : "var(--mantine-color-gray-2)",
-              }}
-            />
+            <div style={{ height: 72, background: bandBackground }} />
           </Card.Section>
           <Stack gap={4} mt="sm">
             <Text size="sm" fw={500} lineClamp={1}>
@@ -56,7 +58,8 @@ export function SpoolGrid({ spools }: Props) {
             ) : null}
           </Stack>
         </Card>
-      ))}
+        );
+      })}
     </SimpleGrid>
   );
 }
