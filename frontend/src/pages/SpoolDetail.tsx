@@ -24,6 +24,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useIsMobile } from "../lib/breakpoints";
 import { AdjustRemainModal } from "../components/AdjustRemainModal";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { CopyableMono } from "../components/CopyableMono";
@@ -49,6 +50,7 @@ export default function SpoolDetailPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const matchStatus = useMatchStatus();
+  const isMobile = useIsMobile();
 
   const spoolMap = useSpoolMap();
   const spool: Spool | undefined = tagId ? spoolMap.get(tagId) : undefined;
@@ -96,68 +98,79 @@ export default function SpoolDetailPage() {
   return (
     <PageShell>
       <Stack gap="lg">
-        <BackLink />
+        <Group justify="space-between" gap="md" wrap="nowrap">
+          <BackLink />
+          <Tooltip
+            label={t("spools.adjust_remain_disabled_hint")}
+            disabled={!amsManagesRemain}
+            withArrow
+          >
+            <Button
+              variant="default"
+              leftSection={<IconGauge size={16} />}
+              onClick={() => setAdjustOpen(true)}
+              disabled={amsManagesRemain}
+            >
+              {t("spools.adjust_remain")}
+            </Button>
+          </Tooltip>
+        </Group>
 
         <Paper p="lg" radius="md" withBorder>
         <Stack gap="md">
-          <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
-            <Group
-              gap="lg"
-              wrap="wrap"
-              align="center"
-              style={{ flex: 1, minWidth: 0, rowGap: "var(--mantine-spacing-md)" }}
+          <Group
+            gap="lg"
+            wrap="wrap"
+            align="center"
+            style={{ rowGap: "var(--mantine-spacing-md)" }}
+          >
+            <SpoolIllustration
+              hex={heroHex}
+              hexes={spool.color_hexes}
+              remain={spool.remain}
+              size={120}
+            />
+            <Stack
+              gap={6}
+              style={{
+                minWidth: 0,
+                // Desktop: sit beside the illustration and grow.
+                // Mobile: force wrap to own row so the title gets full width.
+                flex: isMobile ? "1 1 100%" : "1 1 220px",
+              }}
             >
-              <SpoolIllustration
-                hex={heroHex}
-                hexes={spool.color_hexes}
-                remain={spool.remain}
-                size={120}
-              />
-              <Stack gap={6} style={{ minWidth: 0, flex: "1 1 220px" }}>
-                <Group gap="xs" wrap="wrap">
-                  <Badge color={status.color} variant="light">
-                    {status.label}
+              <Group gap="xs" wrap="wrap">
+                <Badge color={status.color} variant="light">
+                  {status.label}
+                </Badge>
+                {spool.material && (
+                  <Badge color="gray" variant="light">
+                    {spool.material}
                   </Badge>
-                  {spool.material && (
-                    <Badge color="gray" variant="light">
-                      {spool.material}
-                    </Badge>
-                  )}
-                </Group>
-                <Title
-                  order={2}
-                  ff={labels.primaryStyle === "code" ? "monospace" : undefined}
-                  style={{ overflowWrap: "anywhere" }}
-                >
-                  {labels.primary}
-                </Title>
-                {labels.secondary && (
-                  <Text size="sm" c="dimmed">
-                    {labels.secondary}
-                  </Text>
                 )}
-                <HeroRemain
-                  spool={spool}
-                  totalWeight={totalWeight}
-                  onAdjust={() => setAdjustOpen(true)}
-                />
-              </Stack>
-            </Group>
-            <Tooltip
-              label={t("spools.adjust_remain_disabled_hint")}
-              disabled={!amsManagesRemain}
-              withArrow
-            >
-              <Button
-                variant="default"
-                leftSection={<IconGauge size={16} />}
-                onClick={() => setAdjustOpen(true)}
-                disabled={amsManagesRemain}
+              </Group>
+              <Title
+                order={2}
+                ff={labels.primaryStyle === "code" ? "monospace" : undefined}
+                style={{
+                  overflowWrap:
+                    labels.primaryStyle === "code" ? "anywhere" : "break-word",
+                }}
               >
-                {t("spools.adjust_remain")}
-              </Button>
-            </Tooltip>
+                {labels.primary}
+              </Title>
+              {labels.secondary && (
+                <Text size="sm" c="dimmed">
+                  {labels.secondary}
+                </Text>
+              )}
+            </Stack>
           </Group>
+          <HeroRemain
+            spool={spool}
+            totalWeight={totalWeight}
+            onAdjust={() => setAdjustOpen(true)}
+          />
         </Stack>
       </Paper>
 
@@ -323,6 +336,7 @@ interface HeroRemainProps {
 
 function HeroRemain({ spool, totalWeight, onAdjust }: HeroRemainProps) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   if (spool.remain == null || spool.remain < 0) {
     return (
       <Group gap="xs" mt={4}>
@@ -344,7 +358,7 @@ function HeroRemain({ spool, totalWeight, onAdjust }: HeroRemainProps) {
   const remainWeight =
     totalWeight != null ? Math.round((totalWeight * spool.remain) / 100) : null;
   return (
-    <Stack gap={6} mt={4} maw={360}>
+    <Stack gap={6} maw={isMobile ? undefined : 360}>
       <Group justify="space-between" align="baseline">
         <Text size="xl" fw={700}>
           {spool.remain}%

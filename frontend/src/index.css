@@ -8,3 +8,14 @@ body,
 body {
   overflow: hidden;
 }
+
+/* iOS Safari zooms the viewport whenever a focused form control has a
+   computed font-size < 16px. Mantine's default "sm" inputs are 14px, so we
+   bump them to 16px on narrow screens. Desktop keeps the original sizing. */
+@media (max-width: 48em) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
