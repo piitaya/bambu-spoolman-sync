@@ -1,6 +1,8 @@
 import {
   ActionIcon,
   Alert,
+  Box,
+  Card,
   ColorSwatch,
   Group,
   Loader,
@@ -16,38 +18,70 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Spool } from "../api";
-import { useRemoveSpool, useSpoolMap, useSpools } from "../hooks";
+import {
+  useLoadedTagIds,
+  useRemoveSpool,
+  useSpoolMap,
+  useSpools,
+} from "../hooks";
 import { spoolFillColor } from "../components/spoolFillColor";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { EmptyStateCard } from "../components/EmptyStateCard";
 import { AdjustRemainModal } from "../components/AdjustRemainModal";
+import {
+  applySpoolFilters,
+  applySpoolSort,
+  DEFAULT_SORT,
+  EMPTY_FILTERS,
+  remainingGrams,
+  SpoolFilterPanel,
+  SpoolToolbar,
+  type SpoolFilters,
+  type SpoolSort,
+  type SpoolSortField,
+} from "../components/SpoolToolbar";
 
-function formatDate(value: string): string {
+function formatDate(value: string | null): string {
+  if (!value) return "—";
   const normalized = value.includes("T") ? value : value.replace(" ", "T") + "Z";
   return new Date(normalized).toLocaleString();
 }
 
-function sortData(data: Spool[], { columnAccessor, direction }: DataTableSortStatus<Spool>): Spool[] {
-  const sorted = [...data].sort((a, b) => {
-    const aVal = a[columnAccessor as keyof Spool];
-    const bVal = b[columnAccessor as keyof Spool];
-    if (aVal == null && bVal == null) return 0;
-    if (aVal == null) return 1;
-    if (bVal == null) return -1;
-    if (typeof aVal === "number" && typeof bVal === "number") return aVal - bVal;
-    return String(aVal).localeCompare(String(bVal));
-  });
-  return direction === "desc" ? sorted.reverse() : sorted;
+function formatGrams(grams: number | null): string {
+  if (grams == null) return "—";
+  if (grams >= 1000) return `${(grams / 1000).toFixed(2)} kg`;
+  return `${Math.round(grams)} g`;
 }
+
+// DataTable column accessors that map 1:1 with a SpoolSortField.
+// Clicking a column header updates the shared SpoolSort state, and
+// the Sort dropdown stays in sync.
+const COLUMN_TO_SORT_FIELD: Record<string, SpoolSortField> = {
+  color_name: "color_name",
+  product: "product",
+  material: "material",
+  remain: "remain",
+  remain_grams: "remain_grams",
+  last_used: "last_used",
+  last_updated: "last_updated",
+};
+const SORT_FIELD_TO_COLUMN: Partial<Record<SpoolSortField, string>> = {
+  color_name: "color_name",
+  product: "product",
+  material: "material",
+  remain: "remain",
+  remain_grams: "remain_grams",
+  last_used: "last_used",
+  last_updated: "last_updated",
+};
 
 export default function SpoolsPage() {
   const { data: spools, isLoading, isError, error } = useSpools();
+  const loadedTags = useLoadedTagIds();
   const removeSpool = useRemoveSpool();
   const { t } = useTranslation();
-  const [sortStatus, setSortStatus] = useState<DataTableSortStatus<Spool>>({
-    columnAccessor: "last_updated",
-    direction: "desc",
-  });
+  const [filters, setFilters] = useState<SpoolFilters>(EMPTY_FILTERS);
+  const [sort, setSort] = useState<SpoolSort>(DEFAULT_SORT);
   const [toRemove, setToRemove] = useState<Spool | null>(null);
   const [toAdjustId, setToAdjustId] = useState<string | null>(null);
 
@@ -67,10 +101,25 @@ export default function SpoolsPage() {
   const spoolsByTagId = useSpoolMap();
   const toAdjust = toAdjustId ? spoolsByTagId.get(toAdjustId) ?? null : null;
 
-  const sorted = useMemo(
-    () => (spools ? sortData(spools, sortStatus) : []),
-    [spools, sortStatus],
+  const filtered = useMemo(
+    () => (spools ? applySpoolFilters(spools, filters, loadedTags) : []),
+    [spools, filters, loadedTags],
   );
+
+  const sorted = useMemo(
+    () => applySpoolSort(filtered, sort),
+    [filtered, sort],
+  );
+
+  const sortStatus: DataTableSortStatus<Spool> = {
+    columnAccessor: SORT_FIELD_TO_COLUMN[sort.field] ?? "",
+    direction: sort.direction,
+  };
+
+  const handleSortStatusChange = (status: DataTableSortStatus<Spool>) => {
+    const field = COLUMN_TO_SORT_FIELD[status.columnAccessor as string];
+    if (field) setSort({ field, direction: status.direction });
+  };
 
   if (isLoading) return <Loader />;
   if (isError) {
@@ -88,13 +137,37 @@ export default function SpoolsPage() {
       {(!spools || spools.length === 0) ? (
         <EmptyStateCard description={t("spools.empty")} />
       ) : (
-        <DataTable
+        <Group align="flex-start" gap="md" wrap="nowrap">
+          <Box w={320} visibleFrom="sm" component="aside" style={{ flexShrink: 0 }}>
+            <Card withBorder p="md" radius="md">
+              <SpoolFilterPanel
+                spools={spools}
+                filters={filters}
+                onFiltersChange={setFilters}
+                sort={sort}
+                onSortChange={setSort}
+              />
+            </Card>
+          </Box>
+          <Stack gap="md" style={{ flex: 1, minWidth: 0 }}>
+            <SpoolToolbar
+              spools={spools}
+              loadedTags={loadedTags}
+              filters={filters}
+              onFiltersChange={setFilters}
+              sort={sort}
+              onSortChange={setSort}
+            />
+            {sorted.length === 0 ? (
+              <EmptyStateCard description={t("spools.no_match")} />
+            ) : (
+            <DataTable
           withTableBorder
           highlightOnHover
           records={sorted}
           idAccessor="tag_id"
           sortStatus={sortStatus}
-          onSortStatusChange={setSortStatus}
+          onSortStatusChange={handleSortStatusChange}
           onRowClick={({ record }) => navigate(`/inventory/${encodeURIComponent(record.tag_id)}`)}
           columns={[
             {
@@ -137,7 +210,7 @@ export default function SpoolsPage() {
               accessor: "remain",
               title: t("slot.fields.remaining"),
               sortable: true,
-              width: 160,
+              width: 200,
               render: (spool) =>
                 spool.remain != null ? (
                   <Group gap="xs" wrap="nowrap">
@@ -147,13 +220,23 @@ export default function SpoolsPage() {
                       style={{ flex: 1 }}
                       color={spoolFillColor(spool.remain)}
                     />
-                    <Text size="xs" c="dimmed" w={36} ta="right">
-                      {spool.remain}%
+                    <Text size="xs" w={64} ta="right">
+                      {formatGrams(remainingGrams(spool))}
                     </Text>
                   </Group>
                 ) : (
                   <Text c="dimmed" size="sm">—</Text>
                 ),
+            },
+            {
+              accessor: "last_used",
+              title: t("spools.last_used"),
+              sortable: true,
+              render: (spool) => (
+                <Text size="xs" c="dimmed">
+                  {formatDate(spool.last_used)}
+                </Text>
+              ),
             },
             {
               accessor: "last_updated",
@@ -201,7 +284,10 @@ export default function SpoolsPage() {
               ),
             },
           ]}
-        />
+            />
+            )}
+          </Stack>
+        </Group>
       )}
 
       {toAdjust && (
