@@ -2,8 +2,8 @@ import { useLayoutEffect, useRef } from "react";
 import { NavigationType, useLocation, useNavigationType } from "react-router-dom";
 
 interface Result {
-  panelScrollRef: React.RefObject<HTMLDivElement>;
-  tableScrollRef: React.RefObject<HTMLDivElement>;
+  panelScrollRef: React.RefObject<HTMLDivElement | null>;
+  tableScrollRef: React.RefObject<HTMLDivElement | null>;
   saveScroll: () => void;
 }
 
