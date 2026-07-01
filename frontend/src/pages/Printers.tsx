@@ -55,7 +55,7 @@ export default function PrintersPage() {
   );
 
   // Local mirror of printer order for smooth DnD animation
-  const remotePrinters = data?.printers ?? [];
+  const remotePrinters = useMemo(() => data?.printers ?? [], [data]);
   const [orderedPrinters, setOrderedPrinters] = useState<PrinterConfig[]>(remotePrinters);
   const remoteKey = useMemo(
     () => remotePrinters.map((p) => p.serial).join("|"),
@@ -70,7 +70,6 @@ export default function PrintersPage() {
       }
       return remotePrinters;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remoteKey, remotePrinters]);
 
   

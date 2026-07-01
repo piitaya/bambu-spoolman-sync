@@ -1,5 +1,5 @@
 import type { SpoolReading } from "@pandaroo/shared";
-import type { ParsedSlot, ParsedAmsUnit } from "./types.js";
+import type { ParsedAmsUnit } from "./types.js";
 
 export function toSpoolReading(tray: unknown): SpoolReading | null {
   const t = tray as Record<string, unknown> | null;
@@ -55,7 +55,9 @@ export function parseAmsReport(
   payload: unknown,
   previousUnits: ReadonlyArray<ParsedAmsUnit> = [],
 ): ParsedAmsUnit[] {
-  const amsPayload = (payload as any)?.print?.ams;
+  const amsPayload = (
+    payload as { print?: { ams?: { tray_exist_bits?: unknown; ams?: unknown } } } | null
+  )?.print?.ams;
   const trayExistBits = parseHexBits(amsPayload?.tray_exist_bits);
   const amsList = amsPayload?.ams;
   if (!Array.isArray(amsList)) return [];
