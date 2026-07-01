@@ -18,6 +18,8 @@ export const ErrorCode = {
   AmsManagedRemain: "ams_managed_remain",
   AmsLoaded: "ams_loaded",
   CatalogRefreshFailed: "catalog_refresh_failed",
+  Validation: "validation",
+  Internal: "internal",
 } as const;
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];
 

@@ -9,6 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { CATALOG_REPO } from "@pandaroo/shared";
 
 import { configPath, dataDir, loadConfig } from "./config.js";
+import { appErrorHandler } from "./error-handler.js";
 import { createMapping } from "./filament-catalog.js";
 import { createServices } from "./composition-root.js";
 import { openDatabase } from "./db/database.js";
@@ -40,6 +41,8 @@ export async function buildApp() {
       }),
     },
   });
+
+  app.setErrorHandler(appErrorHandler);
 
   await app.register(fastifySwagger, {
     openapi: {
