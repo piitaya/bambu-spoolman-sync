@@ -1,11 +1,4 @@
-import {
-  Alert,
-  Badge,
-  Box,
-  Group,
-  Loader,
-  Text,
-} from "@mantine/core";
+import { Alert, Badge, Box, Group, Loader, Text } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { DataTable, type DataTableSortStatus } from "mantine-datatable";
 import { useEffect, useMemo, useState } from "react";
@@ -54,7 +47,12 @@ const FILAMENT_VIEW_STORAGE_KEY = "pandaroo.filaments.view";
 const FILAMENT_VIEW_VALUES: readonly FilamentView[] = ["table", "grid", "list"];
 
 export default function FilamentsPage() {
-  const { data: catalog, isLoading, isError, error } = useFilamentCatalogEntries();
+  const {
+    data: catalog,
+    isLoading,
+    isError,
+    error,
+  } = useFilamentCatalogEntries();
   const { data: spools } = useSpools();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -133,7 +131,10 @@ export default function FilamentsPage() {
   ) => {
     const accessor = status.columnAccessor as string;
     if (SORT_FIELDS.includes(accessor as FilamentSortField)) {
-      setSort({ field: accessor as FilamentSortField, direction: status.direction });
+      setSort({
+        field: accessor as FilamentSortField,
+        direction: status.direction,
+      });
     }
   };
 
@@ -220,18 +221,12 @@ export default function FilamentsPage() {
             </Box>
           )}
           {sorted.length > 0 && effectiveView === "grid" && (
-            <Box
-              ref={panelScrollRef}
-              style={{ flex: 1, overflow: "auto" }}
-            >
+            <Box ref={panelScrollRef} style={{ flex: 1, overflow: "auto" }}>
               <FilamentGrid groups={groups} onOpen={openFilament} />
             </Box>
           )}
           {sorted.length > 0 && effectiveView === "list" && (
-            <Box
-              ref={panelScrollRef}
-              style={{ flex: 1, overflow: "auto" }}
-            >
+            <Box ref={panelScrollRef} style={{ flex: 1, overflow: "auto" }}>
               <FilamentList groups={groups} onOpen={openFilament} />
             </Box>
           )}
@@ -243,7 +238,9 @@ export default function FilamentsPage() {
               highlightOnHover
               records={tableRecords}
               idAccessor={(r) =>
-                isGroupHeaderRow(r) ? r.key : `${r.entry.sku}::${r.entry.product}`
+                isGroupHeaderRow(r)
+                  ? r.key
+                  : `${r.entry.sku}::${r.entry.product}`
               }
               sortStatus={sortStatus}
               onSortStatusChange={handleSortStatusChange}

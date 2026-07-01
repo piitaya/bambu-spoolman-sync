@@ -151,7 +151,11 @@ export function SpoolFilterPanel({
   onGroupByChange,
 }: PanelProps) {
   const { t } = useTranslation();
-  const { materials, products, colorFamilies: availableFamilies } = useMemo(
+  const {
+    materials,
+    products,
+    colorFamilies: availableFamilies,
+  } = useMemo(
     () => deriveOptions(spools, filters.materials),
     [spools, filters.materials],
   );
@@ -183,12 +187,7 @@ export function SpoolFilterPanel({
   return (
     <Stack gap="md">
       {filters.variantIds.length > 0 && (
-        <Alert
-          color="blue"
-          variant="light"
-          withCloseButton={false}
-          p="xs"
-        >
+        <Alert color="blue" variant="light" withCloseButton={false} p="xs">
           <Group justify="space-between" gap="xs" wrap="nowrap" align="center">
             <Text size="xs">
               {t("spools.filters.variant_filter", {
@@ -487,16 +486,27 @@ export function remainingGrams(spool: Spool): number | null {
   return (spool.weight * spool.remain) / 100;
 }
 
-function sortValue(spool: Spool, field: SpoolSortField): string | number | null {
+function sortValue(
+  spool: Spool,
+  field: SpoolSortField,
+): string | number | null {
   switch (field) {
-    case "last_updated": return spool.last_updated;
-    case "last_used": return spool.last_used;
-    case "first_seen": return spool.first_seen;
-    case "remain": return spool.remain ?? 0;
-    case "remain_grams": return remainingGrams(spool) ?? 0;
-    case "material": return spool.material;
-    case "product": return spool.product;
-    case "color_name": return spool.color_name;
+    case "last_updated":
+      return spool.last_updated;
+    case "last_used":
+      return spool.last_used;
+    case "first_seen":
+      return spool.first_seen;
+    case "remain":
+      return spool.remain ?? 0;
+    case "remain_grams":
+      return remainingGrams(spool) ?? 0;
+    case "material":
+      return spool.material;
+    case "product":
+      return spool.product;
+    case "color_name":
+      return spool.color_name;
   }
 }
 
@@ -538,12 +548,16 @@ export function spoolStateToSearchParams(
   if (filters.search) p.set("q", filters.search);
   if (filters.materials.length) p.set("material", filters.materials.join(","));
   if (filters.products.length) p.set("product", filters.products.join(","));
-  if (filters.colorFamilies.length) p.set("color", filters.colorFamilies.join(","));
+  if (filters.colorFamilies.length)
+    p.set("color", filters.colorFamilies.join(","));
   if (filters.variantIds.length) p.set("variant", filters.variantIds.join(","));
   if (filters.stock !== "all") p.set("stock", filters.stock);
   if (filters.amsOnly) p.set("ams", "1");
   if (filters.noRemain) p.set("noremain", "1");
-  if (sort.field !== DEFAULT_SORT.field || sort.direction !== DEFAULT_SORT.direction) {
+  if (
+    sort.field !== DEFAULT_SORT.field ||
+    sort.direction !== DEFAULT_SORT.direction
+  ) {
     p.set("sort", `${sort.field}:${sort.direction}`);
   }
   if (view !== "table") p.set("view", view);
@@ -577,8 +591,10 @@ export function searchParamsToSpoolState(params: URLSearchParams): {
     search: params.get("q") ?? "",
     materials: params.get("material")?.split(",").filter(Boolean) ?? [],
     products: params.get("product")?.split(",").filter(Boolean) ?? [],
-    colorFamilies: (params.get("color")?.split(",").filter(Boolean) ?? []).filter(
-      (c): c is ColorFamily => COLOR_FAMILIES.includes(c as ColorFamily),
+    colorFamilies: (
+      params.get("color")?.split(",").filter(Boolean) ?? []
+    ).filter((c): c is ColorFamily =>
+      COLOR_FAMILIES.includes(c as ColorFamily),
     ),
     variantIds: params.get("variant")?.split(",").filter(Boolean) ?? [],
     stock,

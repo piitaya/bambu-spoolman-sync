@@ -44,7 +44,9 @@ describe("AmsChangeDetector", () => {
     const detected = vi.fn();
     bus.on("spool:detected", detected);
 
-    bus.emit("ams:reported", printer, [{ id: 0, nozzle_id: 0, slots: [makeSlot()] }]);
+    bus.emit("ams:reported", printer, [
+      { id: 0, nozzle_id: 0, slots: [makeSlot()] },
+    ]);
 
     expect(detected).toHaveBeenCalledOnce();
     expect(detected.mock.calls[0][0].tag_id).toBe("UUID-A");
@@ -82,15 +84,21 @@ describe("AmsChangeDetector", () => {
     const detected = vi.fn();
     bus.on("spool:detected", detected);
 
-    bus.emit("ams:reported", printer, [{ id: 0, nozzle_id: 0, slots: [makeSlot()] }]);
+    bus.emit("ams:reported", printer, [
+      { id: 0, nozzle_id: 0, slots: [makeSlot()] },
+    ]);
 
     const changedSpool: SpoolReading = {
       ...makeSlot().spool!,
       remain: 75,
     };
-    bus.emit("ams:reported", printer, [{
-      id: 0, nozzle_id: 0, slots: [makeSlot({ spool: changedSpool })],
-    }]);
+    bus.emit("ams:reported", printer, [
+      {
+        id: 0,
+        nozzle_id: 0,
+        slots: [makeSlot({ spool: changedSpool })],
+      },
+    ]);
 
     expect(detected).toHaveBeenCalledTimes(2);
 
@@ -105,14 +113,18 @@ describe("AmsChangeDetector", () => {
     const exited = vi.fn();
     bus.on("spool:slot-exited", exited);
 
-    bus.emit("ams:reported", printer, [{ id: 0, nozzle_id: 0, slots: [makeSlot()] }]);
+    bus.emit("ams:reported", printer, [
+      { id: 0, nozzle_id: 0, slots: [makeSlot()] },
+    ]);
 
     const emptySlot: AmsSlot = {
       ...makeSlot(),
       has_spool: false,
       spool: null,
     };
-    bus.emit("ams:reported", printer, [{ id: 0, nozzle_id: 0, slots: [emptySlot] }]);
+    bus.emit("ams:reported", printer, [
+      { id: 0, nozzle_id: 0, slots: [emptySlot] },
+    ]);
 
     expect(exited).toHaveBeenCalledOnce();
     expect(exited.mock.calls[0][0]).toBe("UUID-A");
@@ -133,15 +145,21 @@ describe("AmsChangeDetector", () => {
     const exited = vi.fn();
     bus.on("spool:slot-exited", exited);
 
-    bus.emit("ams:reported", printer, [{ id: 0, nozzle_id: 0, slots: [makeSlot()] }]);
+    bus.emit("ams:reported", printer, [
+      { id: 0, nozzle_id: 0, slots: [makeSlot()] },
+    ]);
 
     const swappedSpool: SpoolReading = {
       ...makeSlot().spool!,
       tag_id: "UUID-B",
     };
-    bus.emit("ams:reported", printer, [{
-      id: 0, nozzle_id: 0, slots: [makeSlot({ spool: swappedSpool })],
-    }]);
+    bus.emit("ams:reported", printer, [
+      {
+        id: 0,
+        nozzle_id: 0,
+        slots: [makeSlot({ spool: swappedSpool })],
+      },
+    ]);
 
     expect(exited).toHaveBeenCalledOnce();
     expect(exited.mock.calls[0][0]).toBe("UUID-A");
@@ -189,9 +207,13 @@ describe("AmsChangeDetector", () => {
       temp_max: null,
       remain: null,
     };
-    bus.emit("ams:reported", printer, [{
-      id: 0, nozzle_id: 0, slots: [makeSlot({ spool: noTagSpool })],
-    }]);
+    bus.emit("ams:reported", printer, [
+      {
+        id: 0,
+        nozzle_id: 0,
+        slots: [makeSlot({ spool: noTagSpool })],
+      },
+    ]);
 
     expect(detected).not.toHaveBeenCalled();
 

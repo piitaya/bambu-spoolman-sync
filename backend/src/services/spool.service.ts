@@ -24,10 +24,7 @@ function serializeColorHexes(hexes: string[] | null): string | null {
   return JSON.stringify(hexes);
 }
 
-function enrichSpool(
-  row: SpoolRow,
-  mapping: Map<string, CatalogEntry>,
-): Spool {
+function enrichSpool(row: SpoolRow, mapping: Map<string, CatalogEntry>): Spool {
   const match = matchSpool(
     { variant_id: row.variantId, material: row.material, product: row.product },
     mapping,
@@ -66,8 +63,7 @@ export type PatchSpoolResult =
   | { ok: false; reason: "not_found" | "ams_managed" };
 
 export type DeleteSpoolResult =
-  | { ok: true }
-  | { ok: false; reason: "not_found" | "ams_loaded" };
+  { ok: true } | { ok: false; reason: "not_found" | "ams_loaded" };
 
 export interface SpoolService {
   list(): Spool[];
@@ -114,7 +110,8 @@ export function createSpoolService(deps: SpoolServiceDeps): SpoolService {
     },
 
     delete(tagId) {
-      if (getAmsReading(tagId) != null) return { ok: false, reason: "ams_loaded" };
+      if (getAmsReading(tagId) != null)
+        return { ok: false, reason: "ams_loaded" };
       const deleted = spoolRepo.delete(tagId);
       if (!deleted) return { ok: false, reason: "not_found" };
       log.info({ tagId }, "Spool deleted");
@@ -162,7 +159,10 @@ export function createSpoolService(deps: SpoolServiceDeps): SpoolService {
         // the return value without a second read.
         row = { ...existing, ...next, lastUpdated: new Date().toISOString() };
       } else {
-        log.info({ tagId, material: data.material, product: data.product }, "New spool detected");
+        log.info(
+          { tagId, material: data.material, product: data.product },
+          "New spool detected",
+        );
         const nowIso = new Date().toISOString();
         row = {
           tagId,

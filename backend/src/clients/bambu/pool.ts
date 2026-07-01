@@ -1,7 +1,11 @@
 import type { FastifyBaseLogger } from "fastify";
 import type { PrinterConfig, SpoolReading } from "@pandaroo/shared";
 import type { AppEventBus } from "../../events.js";
-import { connect, type InternalClient, type PrinterRuntime } from "./connection.js";
+import {
+  connect,
+  type InternalClient,
+  type PrinterRuntime,
+} from "./connection.js";
 
 export type PrinterConnectionPool = Map<string, InternalClient>;
 
@@ -63,7 +67,9 @@ export function findTagReading(
   return null;
 }
 
-export async function disconnectAll(state: PrinterConnectionPool): Promise<void> {
+export async function disconnectAll(
+  state: PrinterConnectionPool,
+): Promise<void> {
   await Promise.all(Array.from(state.values()).map((c) => c.disconnect()));
   state.clear();
 }

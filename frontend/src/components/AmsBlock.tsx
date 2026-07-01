@@ -16,9 +16,7 @@ function NozzleBadge({ nozzleId }: { nozzleId: number | null }) {
   const { t } = useTranslation();
   if (nozzleId == null) return null;
   const isLeft = nozzleId === 1;
-  const label = isLeft
-    ? t("common.left_nozzle")
-    : t("common.right_nozzle");
+  const label = isLeft ? t("common.left_nozzle") : t("common.right_nozzle");
   const shortLabel = isLeft
     ? t("common.left_nozzle_short")
     : t("common.right_nozzle_short");

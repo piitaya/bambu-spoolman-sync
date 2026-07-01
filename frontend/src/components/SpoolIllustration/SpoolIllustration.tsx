@@ -70,7 +70,12 @@ const NOTCHES: ReadonlyArray<{ x: number; y: number }> = (() => {
  * the wound filament is visible; back flange rendered as a halftone-perforated
  * disc. Filament is a colored donut — hub drawn on top hides its centre.
  */
-export function SpoolIllustration({ hex, hexes, remain, size = 180 }: SpoolIllustrationProps) {
+export function SpoolIllustration({
+  hex,
+  hexes,
+  remain,
+  size = 180,
+}: SpoolIllustrationProps) {
   const uid = useId().replace(/:/g, "");
   const bases = (hexes && hexes.length > 0 ? hexes : [hex]).map((h) =>
     normalizeHex(h),
@@ -111,13 +116,7 @@ export function SpoolIllustration({ hex, hexes, remain, size = 180 }: SpoolIllus
         ) : (
           // 135° blend — 25% solid per color on each side with a 50% blend in
           // the middle, matching the swatch gradient direction.
-          <linearGradient
-            id={`coil-${uid}`}
-            x1="0"
-            y1="0"
-            x2="1"
-            y2="1"
-          >
+          <linearGradient id={`coil-${uid}`} x1="0" y1="0" x2="1" y2="1">
             {bases.flatMap((c, i) => {
               const center = i / (bases.length - 1);
               const holdStart = Math.max(0, center - 0.25);
@@ -150,7 +149,12 @@ export function SpoolIllustration({ hex, hexes, remain, size = 180 }: SpoolIllus
       <circle cx={CX} cy={CY} r={R_OUT} className={classes.flange} />
 
       <circle cx={CX} cy={CY} r={R_OUT} className={classes.rim} />
-      <circle cx={CX} cy={CY} r={R_OUT - 1.5} className={classes.rimHighlight} />
+      <circle
+        cx={CX}
+        cy={CY}
+        r={R_OUT - 1.5}
+        className={classes.rimHighlight}
+      />
 
       {PERFORATIONS.map((d, i) => (
         <circle

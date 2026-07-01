@@ -39,7 +39,7 @@ export default function BottomBar({ items, isActive }: BottomBarProps) {
               justifyContent: "center",
               color: active
                 ? "var(--mantine-primary-color-filled)"
-                : "var(--mantine-color-dimmed)"
+                : "var(--mantine-color-dimmed)",
             }}
           >
             <Stack gap={2} align="center" justify="center">

@@ -5,7 +5,7 @@ export function ResponsiveDetailModal({
   opened,
   onClose,
   title,
-  children
+  children,
 }: {
   opened: boolean;
   onClose: () => void;

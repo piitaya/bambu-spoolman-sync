@@ -14,7 +14,7 @@ import type { PrinterErrorCode } from "../api";
  */
 export function PrinterError({
   errorCode,
-  message
+  message,
 }: {
   errorCode: PrinterErrorCode | null;
   message: string;
@@ -27,9 +27,7 @@ export function PrinterError({
       color="red"
       title={t(`dashboard.errors.${code}.title`)}
       description={
-        code === "other"
-          ? message
-          : t(`dashboard.errors.${code}.description`)
+        code === "other" ? message : t(`dashboard.errors.${code}.description`)
       }
     />
   );

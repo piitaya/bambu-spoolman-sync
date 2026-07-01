@@ -15,9 +15,9 @@ describe("ConfigSchema", () => {
   });
 
   it("rejects a printer missing required fields", () => {
-    expect(
-      Value.Check(ConfigSchema, { printers: [{ name: "x" }] }),
-    ).toBe(false);
+    expect(Value.Check(ConfigSchema, { printers: [{ name: "x" }] })).toBe(
+      false,
+    );
   });
 
   it("rejects a printer with an empty serial", () => {

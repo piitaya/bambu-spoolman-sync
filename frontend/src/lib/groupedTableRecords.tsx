@@ -53,7 +53,11 @@ interface RowFactoryArgs<T> {
 }
 
 export function makeGroupRowFactory<T>(colSpan: number) {
-  return ({ record, children, rowProps }: RowFactoryArgs<WithGroupHeader<T>>) => {
+  return ({
+    record,
+    children,
+    rowProps,
+  }: RowFactoryArgs<WithGroupHeader<T>>) => {
     if (isGroupHeaderRow(record)) {
       return (
         <Table.Tr {...rowProps} style={{ cursor: "default" }}>
@@ -64,10 +68,8 @@ export function makeGroupRowFactory<T>(colSpan: number) {
               top: COLUMN_HEADER_OFFSET_PX,
               zIndex: 1,
               background: "var(--mantine-color-default-hover)",
-              padding:
-                "var(--mantine-spacing-xs) var(--mantine-spacing-md)",
-              borderBottom:
-                "1px solid var(--mantine-color-default-border)",
+              padding: "var(--mantine-spacing-xs) var(--mantine-spacing-md)",
+              borderBottom: "1px solid var(--mantine-color-default-border)",
             }}
           >
             <Text size="sm" fw={600} component="span">

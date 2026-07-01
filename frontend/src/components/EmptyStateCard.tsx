@@ -15,7 +15,11 @@ interface EmptyStateCardProps {
   };
 }
 
-export function EmptyStateCard({ title, description, action }: EmptyStateCardProps) {
+export function EmptyStateCard({
+  title,
+  description,
+  action,
+}: EmptyStateCardProps) {
   return (
     <Card withBorder padding="xl" radius="md">
       <Stack gap="md" align="center" ta="center">
@@ -23,8 +27,8 @@ export function EmptyStateCard({ title, description, action }: EmptyStateCardPro
         <Text c="dimmed" maw={420}>
           {description}
         </Text>
-        {action && (
-          action.to ? (
+        {action &&
+          (action.to ? (
             <Button
               component={Link}
               to={action.to}
@@ -42,8 +46,7 @@ export function EmptyStateCard({ title, description, action }: EmptyStateCardPro
             >
               {action.label}
             </Button>
-          )
-        )}
+          ))}
       </Stack>
     </Card>
   );

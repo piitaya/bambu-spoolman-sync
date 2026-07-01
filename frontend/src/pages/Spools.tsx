@@ -1,11 +1,4 @@
-import {
-  Alert,
-  Box,
-  Group,
-  Loader,
-  Progress,
-  Text,
-} from "@mantine/core";
+import { Alert, Box, Group, Loader, Progress, Text } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { DataTable, type DataTableSortStatus } from "mantine-datatable";
 import { useEffect, useMemo, useState } from "react";
@@ -55,7 +48,9 @@ const SPOOL_VIEW_VALUES: readonly SpoolView[] = ["table", "grid", "list"];
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
-  const normalized = value.includes("T") ? value : value.replace(" ", "T") + "Z";
+  const normalized = value.includes("T")
+    ? value
+    : value.replace(" ", "T") + "Z";
   return new Date(normalized).toLocaleString();
 }
 
@@ -148,7 +143,10 @@ export default function SpoolsPage() {
   ) => {
     const accessor = status.columnAccessor as string;
     if (SORT_FIELDS.includes(accessor as SpoolSortField)) {
-      setSort({ field: accessor as SpoolSortField, direction: status.direction });
+      setSort({
+        field: accessor as SpoolSortField,
+        direction: status.direction,
+      });
     }
   };
 
@@ -236,18 +234,12 @@ export default function SpoolsPage() {
             </Box>
           )}
           {sorted.length > 0 && effectiveView === "grid" && (
-            <Box
-              ref={panelScrollRef}
-              style={{ flex: 1, overflow: "auto" }}
-            >
+            <Box ref={panelScrollRef} style={{ flex: 1, overflow: "auto" }}>
               <SpoolGrid groups={groups} onOpen={openSpool} />
             </Box>
           )}
           {sorted.length > 0 && effectiveView === "list" && (
-            <Box
-              ref={panelScrollRef}
-              style={{ flex: 1, overflow: "auto" }}
-            >
+            <Box ref={panelScrollRef} style={{ flex: 1, overflow: "auto" }}>
               <SpoolList groups={groups} onOpen={openSpool} />
             </Box>
           )}
@@ -273,11 +265,7 @@ export default function SpoolsPage() {
                   sortable: false,
                   width: 40,
                   render: dataCell<Spool>((spool) => (
-                    <ColorSwatch
-                      hexes={spoolHexes(spool)}
-                      size={24}
-                      round
-                    />
+                    <ColorSwatch hexes={spoolHexes(spool)} size={24} round />
                   )),
                 },
                 {
@@ -325,7 +313,9 @@ export default function SpoolsPage() {
                         </Text>
                       </Group>
                     ) : (
-                      <Text c="dimmed" size="sm">—</Text>
+                      <Text c="dimmed" size="sm">
+                        —
+                      </Text>
                     ),
                   ),
                 },
@@ -339,7 +329,9 @@ export default function SpoolsPage() {
                     loadedTags.has(spool.tag_id) ? (
                       <Text size="sm">{t("common.yes")}</Text>
                     ) : (
-                      <Text size="sm" c="dimmed">—</Text>
+                      <Text size="sm" c="dimmed">
+                        —
+                      </Text>
                     ),
                   ),
                 },

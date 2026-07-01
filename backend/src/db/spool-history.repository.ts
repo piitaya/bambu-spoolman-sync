@@ -36,7 +36,9 @@ export interface SpoolHistoryRepository {
   deleteByTagId(tagId: string): number;
 }
 
-export function createSpoolHistoryRepository(db: AppDatabase): SpoolHistoryRepository {
+export function createSpoolHistoryRepository(
+  db: AppDatabase,
+): SpoolHistoryRepository {
   const findLatestSync = (tagId: string): SpoolHistoryRow | undefined =>
     db
       .select()
@@ -72,7 +74,11 @@ export function createSpoolHistoryRepository(db: AppDatabase): SpoolHistoryRepos
     },
 
     findById(id) {
-      return db.select().from(spoolHistory).where(eq(spoolHistory.id, id)).get();
+      return db
+        .select()
+        .from(spoolHistory)
+        .where(eq(spoolHistory.id, id))
+        .get();
     },
 
     findLatest(tagId) {
@@ -99,10 +105,7 @@ export function createSpoolHistoryRepository(db: AppDatabase): SpoolHistoryRepos
         .select()
         .from(spoolHistory)
         .where(
-          and(
-            eq(spoolHistory.tagId, tagId),
-            isNotNull(spoolHistory.remain),
-          ),
+          and(eq(spoolHistory.tagId, tagId), isNotNull(spoolHistory.remain)),
         )
         .orderBy(desc(spoolHistory.createdAt), desc(spoolHistory.id))
         .limit(1)
@@ -150,4 +153,3 @@ export function createSpoolHistoryRepository(db: AppDatabase): SpoolHistoryRepos
     },
   };
 }
-

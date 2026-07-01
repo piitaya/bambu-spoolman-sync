@@ -9,7 +9,7 @@ import type { Spool } from "../api";
 export function AdjustRemainModal({
   spool,
   opened,
-  onClose
+  onClose,
 }: {
   spool: Spool;
   opened: boolean;
@@ -24,7 +24,8 @@ export function AdjustRemainModal({
   }, [opened, spool.remain]);
 
   const totalWeight = spool.weight ?? 0;
-  const remainingWeight = totalWeight > 0 ? Math.round(totalWeight * value / 100) : null;
+  const remainingWeight =
+    totalWeight > 0 ? Math.round((totalWeight * value) / 100) : null;
 
   const handleSave = () => {
     patchSpool.mutate(
@@ -47,9 +48,13 @@ export function AdjustRemainModal({
         </Text>
         <Stack gap="xs">
           <Group justify="space-between">
-            <Text size="sm" fw={600}>{value}%</Text>
+            <Text size="sm" fw={600}>
+              {value}%
+            </Text>
             {remainingWeight != null && (
-              <Text size="sm" c="dimmed">{remainingWeight} / {totalWeight} g</Text>
+              <Text size="sm" c="dimmed">
+                {remainingWeight} / {totalWeight} g
+              </Text>
             )}
           </Group>
           <Slider

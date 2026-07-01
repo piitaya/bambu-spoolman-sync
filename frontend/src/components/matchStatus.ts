@@ -13,7 +13,7 @@ const MATCH_COLORS: Record<SlotMatchType, string> = {
   unknown: "orange",
   third_party: "blue",
   unidentified: "gray",
-  empty: "gray"
+  empty: "gray",
 };
 
 export const MATCH_STATUS_ORDER: SlotMatchType[] = [
@@ -21,7 +21,7 @@ export const MATCH_STATUS_ORDER: SlotMatchType[] = [
   "unknown",
   "third_party",
   "unidentified",
-  "empty"
+  "empty",
 ];
 
 export function useMatchStatus(): Record<SlotMatchType, MatchStatusInfo> {
@@ -31,32 +31,32 @@ export function useMatchStatus(): Record<SlotMatchType, MatchStatusInfo> {
       known: {
         label: t("status.known.label"),
         color: MATCH_COLORS.known,
-        description: t("status.known.description")
+        description: t("status.known.description"),
       },
       unknown: {
         label: t("status.unknown.label"),
         color: MATCH_COLORS.unknown,
-        description: t("status.unknown.description")
+        description: t("status.unknown.description"),
       },
       third_party: {
         label: t("status.third_party.label"),
         color: MATCH_COLORS.third_party,
-        description: t("status.third_party.description")
+        description: t("status.third_party.description"),
       },
       unidentified: {
         label: t("status.unidentified.label"),
         color: MATCH_COLORS.unidentified,
-        description: t("status.unidentified.description")
+        description: t("status.unidentified.description"),
       },
       empty: {
         label: t("status.empty.label"),
         color: MATCH_COLORS.empty,
-        description: t("status.empty.description")
-      }
+        description: t("status.empty.description"),
+      },
     }),
     // i18n.language ensures the memo recomputes on language switch
     // even though the t function reference is stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, i18n.language]
+    [t, i18n.language],
   );
 }

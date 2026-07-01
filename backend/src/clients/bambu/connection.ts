@@ -21,7 +21,11 @@ export interface InternalClient {
   disconnect(): Promise<void>;
 }
 
-export function connect(printer: PrinterConfig, bus: AppEventBus, log: FastifyBaseLogger): InternalClient {
+export function connect(
+  printer: PrinterConfig,
+  bus: AppEventBus,
+  log: FastifyBaseLogger,
+): InternalClient {
   const ctx = { serial: printer.serial, name: printer.name };
   const status: PrinterStatus = {
     lastError: null,
@@ -31,7 +35,8 @@ export function connect(printer: PrinterConfig, bus: AppEventBus, log: FastifyBa
   let hasEverReceivedMessage = false;
   let watchdog: NodeJS.Timeout | null = null;
 
-  const emitStatus = () => bus.emit("printer:status-changed", printer, { ...status });
+  const emitStatus = () =>
+    bus.emit("printer:status-changed", printer, { ...status });
 
   const armWatchdog = () => {
     if (hasEverReceivedMessage || watchdog) return;
@@ -40,7 +45,10 @@ export function connect(printer: PrinterConfig, bus: AppEventBus, log: FastifyBa
       if (hasEverReceivedMessage) return;
       status.errorCode = "no_response";
       status.lastError = null;
-      log.warn({ ...ctx, host: printer.host }, "Printer not responding (check IP and network)");
+      log.warn(
+        { ...ctx, host: printer.host },
+        "Printer not responding (check IP and network)",
+      );
       emitStatus();
     }, 15_000);
   };
@@ -92,7 +100,10 @@ export function connect(printer: PrinterConfig, bus: AppEventBus, log: FastifyBa
 
   client.on("error", (err) => {
     const errorCode = classifyMqttError(err);
-    log.warn({ ...ctx, errorCode, err: err.message }, "Printer connection error");
+    log.warn(
+      { ...ctx, errorCode, err: err.message },
+      "Printer connection error",
+    );
     status.errorCode = errorCode;
     status.lastError = err.message;
     emitStatus();
@@ -107,7 +118,8 @@ export function connect(printer: PrinterConfig, bus: AppEventBus, log: FastifyBa
     }
     if (
       !Array.isArray(
-        (payload as { print?: { ams?: { ams?: unknown } } } | null)?.print?.ams?.ams,
+        (payload as { print?: { ams?: { ams?: unknown } } } | null)?.print?.ams
+          ?.ams,
       )
     )
       return;
@@ -115,7 +127,10 @@ export function connect(printer: PrinterConfig, bus: AppEventBus, log: FastifyBa
     amsUnits.length = 0;
     amsUnits.push(...parsed);
 
-    log.debug({ serial: printer.serial, amsUnitCount: parsed.length }, "AMS report received");
+    log.debug(
+      { serial: printer.serial, amsUnitCount: parsed.length },
+      "AMS report received",
+    );
 
     hasEverReceivedMessage = true;
     clearWatchdog();

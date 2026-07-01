@@ -84,7 +84,10 @@ export function PillPicker<T extends string>({
     }
 
     const widths = pillNodes.map((n) => n.offsetWidth);
-    const totalAll = widths.reduce((s, w, i) => s + w + (i > 0 ? PILL_GAP : 0), 0);
+    const totalAll = widths.reduce(
+      (s, w, i) => s + w + (i > 0 ? PILL_GAP : 0),
+      0,
+    );
     if (totalAll <= available) {
       setVisibleCount(widths.length);
       return;
@@ -178,7 +181,9 @@ export function PillPicker<T extends string>({
           {value.map(renderPill)}
         </div>
         <div ref={overflowMeasureRef}>
-          <Pill style={{ flexShrink: 0 }}>{`+${Math.max(value.length, 1)}`}</Pill>
+          <Pill
+            style={{ flexShrink: 0 }}
+          >{`+${Math.max(value.length, 1)}`}</Pill>
         </div>
       </div>
       <Combobox.DropdownTarget>
@@ -211,7 +216,11 @@ export function PillPicker<T extends string>({
                 placeholder={value.length === 0 ? placeholder : ""}
                 // Collapse the field so overflow pills are computed against
                 // the actual remaining space, not a 60 px reservation.
-                style={value.length > 0 ? { minWidth: 0, width: 0, flex: "1 1 0" } : undefined}
+                style={
+                  value.length > 0
+                    ? { minWidth: 0, width: 0, flex: "1 1 0" }
+                    : undefined
+                }
               />
             </Combobox.EventsTarget>
           </Pill.Group>

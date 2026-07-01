@@ -58,7 +58,9 @@ export function useEventStream() {
       try {
         const { tag_id } = JSON.parse((e as MessageEvent).data);
         if (tag_id) {
-          qc.invalidateQueries({ queryKey: queryKeys.spoolHistory.byTag(tag_id) });
+          qc.invalidateQueries({
+            queryKey: queryKeys.spoolHistory.byTag(tag_id),
+          });
         }
       } catch {}
     });
@@ -116,7 +118,10 @@ interface AmsSlotInfo {
 }
 
 const spoolMapCache = new WeakMap<readonly Spool[], Map<string, Spool>>();
-const slotInfoCache = new WeakMap<readonly Printer[], Map<string, AmsSlotInfo>>();
+const slotInfoCache = new WeakMap<
+  readonly Printer[],
+  Map<string, AmsSlotInfo>
+>();
 const loadedTagsCache = new WeakMap<readonly Printer[], Set<string>>();
 
 function buildSpoolMap(spools: readonly Spool[]): Map<string, Spool> {
@@ -128,7 +133,9 @@ function buildSpoolMap(spools: readonly Spool[]): Map<string, Spool> {
   return map;
 }
 
-function buildSlotInfoMap(printers: readonly Printer[]): Map<string, AmsSlotInfo> {
+function buildSlotInfoMap(
+  printers: readonly Printer[],
+): Map<string, AmsSlotInfo> {
   let map = slotInfoCache.get(printers);
   if (map) return map;
   map = new Map();
@@ -160,7 +167,9 @@ export function useSpoolMap(): Map<string, Spool> {
 
 export function useSpoolLocation(tagId: string): AmsLocation | null {
   const { data: printers } = usePrinters();
-  return buildSlotInfoMap(printers ?? EMPTY_PRINTERS).get(tagId)?.location ?? null;
+  return (
+    buildSlotInfoMap(printers ?? EMPTY_PRINTERS).get(tagId)?.location ?? null
+  );
 }
 
 export function useLoadedTagIds(): ReadonlySet<string> {
@@ -185,10 +194,15 @@ export function useLoadedTagIds(): ReadonlySet<string> {
 // True when the tag's AMS slot reports a remain value (not AMS Lite).
 export function useSpoolReportsRemain(tagId: string): boolean {
   const { data: printers } = usePrinters();
-  return buildSlotInfoMap(printers ?? EMPTY_PRINTERS).get(tagId)?.reading.remain != null;
+  return (
+    buildSlotInfoMap(printers ?? EMPTY_PRINTERS).get(tagId)?.reading.remain !=
+    null
+  );
 }
 
-export function useSlotSpool(tagId: string | null | undefined): Spool | undefined {
+export function useSlotSpool(
+  tagId: string | null | undefined,
+): Spool | undefined {
   const spoolMap = useSpoolMap();
   return tagId ? spoolMap.get(tagId) : undefined;
 }
@@ -206,8 +220,8 @@ function useToasts() {
       notifications.show({
         color: "red",
         title: t("errors.generic"),
-        message: err instanceof Error ? err.message : String(err)
-      })
+        message: err instanceof Error ? err.message : String(err),
+      }),
   };
 }
 
@@ -293,8 +307,13 @@ export const usePutConfig = () => {
 export const usePatchSpool = () => {
   const { t } = useTranslation();
   return useMutationWithToast({
-    mutationFn: ({ tagId, data }: { tagId: string; data: { remain?: number } }) =>
-      api.patchSpool(tagId, data),
+    mutationFn: ({
+      tagId,
+      data,
+    }: {
+      tagId: string;
+      data: { remain?: number };
+    }) => api.patchSpool(tagId, data),
     successMessage: t("spools.notifications.updated"),
     invalidate: [queryKeys.spools, queryKeys.spoolHistory.all],
   });
@@ -351,7 +370,7 @@ export const useReorderPrinters = () => {
     onError: (err) => {
       qc.invalidateQueries({ queryKey: queryKeys.config });
       toast.error(err);
-    }
+    },
   });
 };
 
@@ -371,7 +390,6 @@ export const useRefreshMapping = () => {
       qc.invalidateQueries({ queryKey: queryKeys.filamentCatalogEntries });
       toast.success(t("settings.mapping_card.refreshed", { count }));
     },
-    onError: toast.error
+    onError: toast.error,
   });
 };
-

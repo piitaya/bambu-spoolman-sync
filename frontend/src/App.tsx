@@ -1,4 +1,10 @@
-import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useParams,
+} from "react-router-dom";
 import Layout from "./components/Layout";
 import SettingsLayout from "./components/SettingsLayout";
 import Dashboard from "./pages/Dashboard";
@@ -12,7 +18,9 @@ import { useEventStream } from "./hooks";
 
 function RedirectSpoolDetail() {
   const { tagId } = useParams<{ tagId: string }>();
-  return <Navigate to={`/inventory/${encodeURIComponent(tagId ?? "")}`} replace />;
+  return (
+    <Navigate to={`/inventory/${encodeURIComponent(tagId ?? "")}`} replace />
+  );
 }
 
 export default function App() {
@@ -33,7 +41,10 @@ export default function App() {
           </Route>
           <Route path="spools" element={<Navigate to="/inventory" replace />} />
           <Route path="spools/:tagId" element={<RedirectSpoolDetail />} />
-          <Route path="printers" element={<Navigate to="/settings/printers" replace />} />
+          <Route
+            path="printers"
+            element={<Navigate to="/settings/printers" replace />}
+          />
           <Route path="*" element={<Navigate to="/live" replace />} />
         </Route>
       </Routes>

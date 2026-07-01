@@ -56,7 +56,9 @@ export function parseAmsReport(
   previousUnits: ReadonlyArray<ParsedAmsUnit> = [],
 ): ParsedAmsUnit[] {
   const amsPayload = (
-    payload as { print?: { ams?: { tray_exist_bits?: unknown; ams?: unknown } } } | null
+    payload as {
+      print?: { ams?: { tray_exist_bits?: unknown; ams?: unknown } };
+    } | null
   )?.print?.ams;
   const trayExistBits = parseHexBits(amsPayload?.tray_exist_bits);
   const amsList = amsPayload?.ams;
@@ -78,9 +80,7 @@ export function parseAmsReport(
       const slotId = Number(t?.id ?? 0);
       const globalBit = amsId * 4 + slotId;
       const hasSpool =
-        trayExistBits != null
-          ? ((trayExistBits >> globalBit) & 1) === 1
-          : true;
+        trayExistBits != null ? ((trayExistBits >> globalBit) & 1) === 1 : true;
       return {
         printer_serial: printerSerial,
         ams_id: amsId,

@@ -186,17 +186,10 @@ function ColorDistribution({
     <Stack gap="xs">
       {data.map(({ family, count, hex }) => (
         <Group key={family} gap="sm" wrap="nowrap" align="center">
-          <Text
-            size="sm"
-            style={{ width: 80, flexShrink: 0 }}
-            tt="capitalize"
-          >
+          <Text size="sm" style={{ width: 80, flexShrink: 0 }} tt="capitalize">
             {t(`color_family.${family}`)}
           </Text>
-          <Progress.Root
-            size="lg"
-            style={{ flex: 1, minWidth: 0, height: 20 }}
-          >
+          <Progress.Root size="lg" style={{ flex: 1, minWidth: 0, height: 20 }}>
             <Progress.Section
               value={(count / max) * 100}
               color={hex}

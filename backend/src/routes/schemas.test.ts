@@ -3,9 +3,7 @@ import { parseSpoolScan } from "./schemas.js";
 import { matchSpool } from "../filament-catalog.js";
 import type { CatalogEntry } from "@pandaroo/shared";
 
-const mapping = new Map<string, CatalogEntry>([
-  ["A01-B6", { id: "A01-B6" }],
-]);
+const mapping = new Map<string, CatalogEntry>([["A01-B6", { id: "A01-B6" }]]);
 
 function makeScan(over: Record<string, unknown> = {}) {
   return {

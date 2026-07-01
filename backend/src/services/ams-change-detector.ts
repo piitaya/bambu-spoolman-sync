@@ -30,7 +30,10 @@ interface LastSeen {
   signature: string;
 }
 
-export function createAmsChangeDetector(bus: AppEventBus, log: FastifyBaseLogger): AmsChangeDetector {
+export function createAmsChangeDetector(
+  bus: AppEventBus,
+  log: FastifyBaseLogger,
+): AmsChangeDetector {
   const lastBySlot = new Map<string, LastSeen>();
 
   // So the next AMS report re-emits `spool:detected` after a manual adjust.
@@ -49,7 +52,12 @@ export function createAmsChangeDetector(bus: AppEventBus, log: FastifyBaseLogger
         if (!slot.spool?.tag_id) {
           if (previous) {
             log.debug(
-              { printerSerial: slot.printer_serial, amsId: slot.ams_id, slotId: slot.slot_id, tagId: previous.tagId },
+              {
+                printerSerial: slot.printer_serial,
+                amsId: slot.ams_id,
+                slotId: slot.slot_id,
+                tagId: previous.tagId,
+              },
               "AMS slot emptied",
             );
             bus.emit("spool:slot-exited", previous.tagId, slotLocation(slot));
@@ -69,7 +77,12 @@ export function createAmsChangeDetector(bus: AppEventBus, log: FastifyBaseLogger
         lastBySlot.set(key, { tagId: slot.spool.tag_id, signature });
 
         log.debug(
-          { printerSerial: slot.printer_serial, amsId: slot.ams_id, slotId: slot.slot_id, tagId: slot.spool.tag_id },
+          {
+            printerSerial: slot.printer_serial,
+            amsId: slot.ams_id,
+            slotId: slot.slot_id,
+            tagId: slot.spool.tag_id,
+          },
           "AMS slot changed",
         );
 

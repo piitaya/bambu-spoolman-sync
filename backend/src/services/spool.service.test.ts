@@ -99,7 +99,9 @@ describe("SpoolService.upsert", () => {
   it("emits spool:updated when remain changes", () => {
     service.upsert(baseReading({ remain: 80 }), { source: "ams" });
     updates.length = 0;
-    const result = service.upsert(baseReading({ remain: 70 }), { source: "ams" });
+    const result = service.upsert(baseReading({ remain: 70 }), {
+      source: "ams",
+    });
     expect(result?.created).toBe(false);
     expect(updates).toEqual(["TAG-1"]);
   });

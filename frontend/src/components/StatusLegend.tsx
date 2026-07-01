@@ -4,7 +4,7 @@ import { useMatchStatus, MATCH_STATUS_ORDER } from "./matchStatus";
 
 export function StatusLegend({
   opened,
-  onClose
+  onClose,
 }: {
   opened: boolean;
   onClose: () => void;
@@ -32,7 +32,7 @@ export function StatusLegend({
                   width: 110,
                   flexShrink: 0,
                   display: "flex",
-                  justifyContent: "flex-start"
+                  justifyContent: "flex-start",
                 }}
               >
                 <Badge color={info.color} variant="light">

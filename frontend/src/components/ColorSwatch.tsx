@@ -16,9 +16,7 @@ export function swatchFill(hex: string | null | undefined): string | null {
 export function swatchBackground(
   hexes: ReadonlyArray<string | null | undefined>,
 ): string | null {
-  const colors = hexes
-    .map(swatchFill)
-    .filter((c): c is string => c !== null);
+  const colors = hexes.map(swatchFill).filter((c): c is string => c !== null);
   if (colors.length === 0) return null;
   if (colors.length === 1) return colors[0];
   const stops: string[] = [];

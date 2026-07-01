@@ -78,7 +78,8 @@ export function createSpoolHistoryService(
 
     // Baseline = latest remain-bearing event of any type. Catches AMS reports
     // that revert a manual override.
-    const baselineRemain = historyRepo.findLatestWithRemain(tagId)?.remain ?? null;
+    const baselineRemain =
+      historyRepo.findLatestWithRemain(tagId)?.remain ?? null;
 
     historyRepo.insertIfChanged(
       {
@@ -112,7 +113,10 @@ export function createSpoolHistoryService(
     );
   }
 
-  function snapshotFromSpool(tagId: string): { remain: number | null; weight: number | null } {
+  function snapshotFromSpool(tagId: string): {
+    remain: number | null;
+    weight: number | null;
+  } {
     const row = spoolRepo.findByTagId(tagId);
     if (!row) return { remain: null, weight: null };
     return { remain: row.remain, weight: row.weight };
@@ -141,7 +145,9 @@ export function createSpoolHistoryService(
       last.amsId === location.ams_id &&
       last.slotId === location.slot_id;
     const stillInPlace = last?.eventType !== "ams_unload" && sameSlot;
-    const eventType: SpoolHistoryEventType = stillInPlace ? "ams_update" : "ams_load";
+    const eventType: SpoolHistoryEventType = stillInPlace
+      ? "ams_update"
+      : "ams_load";
 
     writeIfMeaningful({
       tagId: spool.tag_id,
@@ -213,7 +219,8 @@ export function createSpoolHistoryService(
       const row = historyRepo.findById(eventId);
       if (!row) return { ok: false, reason: "not_found" };
       if (row.tagId !== tagId) return { ok: false, reason: "tag_mismatch" };
-      if (row.eventType !== "adjust") return { ok: false, reason: "not_manual" };
+      if (row.eventType !== "adjust")
+        return { ok: false, reason: "not_manual" };
       const updated = historyRepo.updateRemain(eventId, patch.remain);
       if (!updated) return { ok: false, reason: "not_found" };
       syncCurrentRemain(tagId);
@@ -224,7 +231,8 @@ export function createSpoolHistoryService(
       const row = historyRepo.findById(eventId);
       if (!row) return { ok: false, reason: "not_found" };
       if (row.tagId !== tagId) return { ok: false, reason: "tag_mismatch" };
-      if (row.eventType !== "adjust") return { ok: false, reason: "not_manual" };
+      if (row.eventType !== "adjust")
+        return { ok: false, reason: "not_manual" };
       const deleted = historyRepo.deleteById(eventId);
       if (!deleted) return { ok: false, reason: "not_found" };
       syncCurrentRemain(tagId);

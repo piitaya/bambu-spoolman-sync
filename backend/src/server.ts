@@ -62,8 +62,18 @@ export async function buildApp() {
     onError: (err) => app.log.warn({ err }, "Mapping refresh failed"),
   });
 
-  const { db, sqlite } = openDatabase(undefined, app.log.child({ module: "db" }));
-  const services = createServices(config, cfgPath, db, sqlite, mapping, app.log);
+  const { db, sqlite } = openDatabase(
+    undefined,
+    app.log.child({ module: "db" }),
+  );
+  const services = createServices(
+    config,
+    cfgPath,
+    db,
+    sqlite,
+    mapping,
+    app.log,
+  );
   services.startAll();
 
   await app.register(configRoutes, { configStore: services.configStore });

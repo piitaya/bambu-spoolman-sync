@@ -1,11 +1,4 @@
-import {
-  ActionIcon,
-  Alert,
-  Group,
-  Loader,
-  Stack,
-  Title
-} from "@mantine/core";
+import { ActionIcon, Alert, Group, Loader, Stack, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconHelp, IconPlus } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -21,7 +14,12 @@ export default function DashboardPage() {
   const [legendOpened, { open: openLegend, close: closeLegend }] =
     useDisclosure(false);
 
-  if (isLoading) return <PageShell><Loader /></PageShell>;
+  if (isLoading)
+    return (
+      <PageShell>
+        <Loader />
+      </PageShell>
+    );
   if (isError) {
     return (
       <PageShell>
@@ -39,46 +37,46 @@ export default function DashboardPage() {
   return (
     <PageShell>
       <Stack gap="xl">
-      <Group gap="xs" wrap="nowrap">
-        <Title order={2}>{t("dashboard.title")}</Title>
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          onClick={openLegend}
-          aria-label={t("dashboard.help_aria_label")}
-        >
-          <IconHelp size={20} />
-        </ActionIcon>
-      </Group>
+        <Group gap="xs" wrap="nowrap">
+          <Title order={2}>{t("dashboard.title")}</Title>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            onClick={openLegend}
+            aria-label={t("dashboard.help_aria_label")}
+          >
+            <IconHelp size={20} />
+          </ActionIcon>
+        </Group>
 
-      {printers.length === 0 && !hasAnyPrinter && (
-        <EmptyStateCard
-          title={t("dashboard.no_printers_title")}
-          description={t("dashboard.no_printers_body")}
-          action={{
-            label: t("dashboard.no_printers_action"),
-            to: "/settings/printers",
-            state: { openAdd: true },
-            icon: <IconPlus size={16} />,
-          }}
-        />
-      )}
+        {printers.length === 0 && !hasAnyPrinter && (
+          <EmptyStateCard
+            title={t("dashboard.no_printers_title")}
+            description={t("dashboard.no_printers_body")}
+            action={{
+              label: t("dashboard.no_printers_action"),
+              to: "/settings/printers",
+              state: { openAdd: true },
+              icon: <IconPlus size={16} />,
+            }}
+          />
+        )}
 
-      {printers.length === 0 && hasAnyPrinter && (
-        <EmptyStateCard
-          title={t("dashboard.all_disabled_title")}
-          description={t("dashboard.all_disabled_body")}
-          action={{
-            label: t("dashboard.all_disabled_action"),
-            to: "/settings/printers",
-            variant: "default",
-          }}
-        />
-      )}
+        {printers.length === 0 && hasAnyPrinter && (
+          <EmptyStateCard
+            title={t("dashboard.all_disabled_title")}
+            description={t("dashboard.all_disabled_body")}
+            action={{
+              label: t("dashboard.all_disabled_action"),
+              to: "/settings/printers",
+              variant: "default",
+            }}
+          />
+        )}
 
-      {printers.map((p) => (
-        <PrinterBlock key={p.serial} p={p} />
-      ))}
+        {printers.map((p) => (
+          <PrinterBlock key={p.serial} p={p} />
+        ))}
 
         <StatusLegend opened={legendOpened} onClose={closeLegend} />
       </Stack>

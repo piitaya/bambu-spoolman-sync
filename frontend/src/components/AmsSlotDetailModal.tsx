@@ -1,4 +1,13 @@
-import { Badge, Button, Card, Group, Progress, Stack, Table, Text } from "@mantine/core";
+import {
+  Badge,
+  Button,
+  Card,
+  Group,
+  Progress,
+  Stack,
+  Table,
+  Text,
+} from "@mantine/core";
 import { IconExternalLink } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -24,7 +33,9 @@ function ReadingSection({ slot }: { slot: AmsSlot }) {
     return (
       <Stack gap="xs">
         <SectionTitle>{t("slot.sections.ams_reading")}</SectionTitle>
-        <Text size="sm" c="dimmed">{t("slot.no_spool_loaded")}</Text>
+        <Text size="sm" c="dimmed">
+          {t("slot.no_spool_loaded")}
+        </Text>
       </Stack>
     );
   }
@@ -56,14 +67,19 @@ function ReadingSection({ slot }: { slot: AmsSlot }) {
                 <Group gap={8} wrap="nowrap">
                   <ColorSwatch hexes={spoolHexes(sp)} round />
                   {slot.color_name && (
-                    <Text size="sm" truncate>{slot.color_name}</Text>
+                    <Text size="sm" truncate>
+                      {slot.color_name}
+                    </Text>
                   )}
                 </Group>
               }
             />
           )}
           {material && (
-            <Row label={t("slot.fields.material")} value={<Plain>{material}</Plain>} />
+            <Row
+              label={t("slot.fields.material")}
+              value={<Plain>{material}</Plain>}
+            />
           )}
           {sp.variant_id && (
             <Row
@@ -94,7 +110,9 @@ function ReadingSection({ slot }: { slot: AmsSlot }) {
                     style={{ width: 60, flexShrink: 0 }}
                     color={spoolFillColor(sp.remain!)}
                   />
-                  <Text size="sm" style={{ whiteSpace: "nowrap" }}>{sp.remain}%</Text>
+                  <Text size="sm" style={{ whiteSpace: "nowrap" }}>
+                    {sp.remain}%
+                  </Text>
                 </Group>
               }
             />
@@ -130,7 +148,9 @@ function LinkedSpoolSection({
       {spool ? (
         <LinkedSpoolCard spool={spool} onClose={onClose} />
       ) : (
-        <Text size="sm" c="dimmed">{t("slot.linked_spool.not_tracked_hint")}</Text>
+        <Text size="sm" c="dimmed">
+          {t("slot.linked_spool.not_tracked_hint")}
+        </Text>
       )}
     </Stack>
   );
@@ -144,7 +164,13 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LinkedSpoolCard({ spool, onClose }: { spool: Spool; onClose: () => void }) {
+function LinkedSpoolCard({
+  spool,
+  onClose,
+}: {
+  spool: Spool;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const labels = spoolLabels(spool);
@@ -172,7 +198,8 @@ function LinkedSpoolCard({ spool, onClose }: { spool: Spool; onClose: () => void
         </Group>
         <Group justify="space-between" gap="xs" wrap="nowrap" align="flex-end">
           <Text size="xs" c="dimmed" truncate>
-            {t("slot.fields.first_seen")}: {new Date(spool.first_seen).toLocaleString()}
+            {t("slot.fields.first_seen")}:{" "}
+            {new Date(spool.first_seen).toLocaleString()}
           </Text>
           <Button
             variant="default"

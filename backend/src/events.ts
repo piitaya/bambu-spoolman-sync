@@ -1,5 +1,10 @@
 import { EventEmitter } from "node:events";
-import type { SpoolReading, PrinterConfig, PrinterStatus, Config } from "@pandaroo/shared";
+import type {
+  SpoolReading,
+  PrinterConfig,
+  PrinterStatus,
+  Config,
+} from "@pandaroo/shared";
 import type { ParsedAmsUnit } from "./clients/bambu/types.js";
 
 export interface SlotLocation {
@@ -12,7 +17,10 @@ export interface AppEvents {
   "spool:updated": [tagId: string];
   "spool:scanned": [tagId: string];
   "spool:adjusted": [tagId: string];
-  "spool:detected": [spool: SpoolReading & { tag_id: string }, location: SlotLocation];
+  "spool:detected": [
+    spool: SpoolReading & { tag_id: string },
+    location: SlotLocation,
+  ];
   "spool:slot-exited": [tagId: string, location: SlotLocation];
   "ams:reported": [printer: PrinterConfig, amsUnits: ParsedAmsUnit[]];
   "printer:status-changed": [printer: PrinterConfig, status: PrinterStatus];
@@ -20,8 +28,14 @@ export interface AppEvents {
 }
 
 export type AppEventBus = {
-  on<K extends keyof AppEvents>(event: K, handler: (...args: AppEvents[K]) => void): void;
-  off<K extends keyof AppEvents>(event: K, handler: (...args: AppEvents[K]) => void): void;
+  on<K extends keyof AppEvents>(
+    event: K,
+    handler: (...args: AppEvents[K]) => void,
+  ): void;
+  off<K extends keyof AppEvents>(
+    event: K,
+    handler: (...args: AppEvents[K]) => void,
+  ): void;
   emit<K extends keyof AppEvents>(event: K, ...args: AppEvents[K]): void;
 };
 

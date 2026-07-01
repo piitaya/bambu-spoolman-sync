@@ -1,11 +1,4 @@
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Group,
-  Title,
-  Tooltip,
-} from "@mantine/core";
+import { ActionIcon, Box, Button, Group, Title, Tooltip } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
@@ -51,7 +44,8 @@ export default function Layout() {
         style={{
           flexShrink: 0,
           height: `calc(${HEADER_HEIGHT}px + env(safe-area-inset-top))`,
-          paddingTop: "calc(var(--mantine-spacing-sm) + env(safe-area-inset-top))",
+          paddingTop:
+            "calc(var(--mantine-spacing-sm) + env(safe-area-inset-top))",
           paddingBottom: "var(--mantine-spacing-sm)",
           paddingLeft:
             "calc(var(--mantine-spacing-sm) + env(safe-area-inset-left))",

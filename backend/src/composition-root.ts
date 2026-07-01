@@ -5,8 +5,14 @@ import type { Mapping } from "./filament-catalog.js";
 import type { AppDatabase } from "./db/database.js";
 import { createSpoolRepository } from "./db/spool.repository.js";
 import { createSpoolHistoryRepository } from "./db/spool-history.repository.js";
-import { createSpoolService, type SpoolService } from "./services/spool.service.js";
-import { createSpoolHistoryService, type SpoolHistoryService } from "./services/spool-history.service.js";
+import {
+  createSpoolService,
+  type SpoolService,
+} from "./services/spool.service.js";
+import {
+  createSpoolHistoryService,
+  type SpoolHistoryService,
+} from "./services/spool-history.service.js";
 import { createAmsChangeDetector } from "./services/ams-change-detector.js";
 import { createEventBus, type AppEventBus } from "./events.js";
 import { createConfigStore, type ConfigStore } from "./config-store.js";
@@ -45,7 +51,12 @@ export function createServices(
   const amsLog = log.child({ module: "ams" });
   const configLog = log.child({ module: "config" });
 
-  const configStore = createConfigStore(initialConfig, configFilePath, bus, configLog);
+  const configStore = createConfigStore(
+    initialConfig,
+    configFilePath,
+    bus,
+    configLog,
+  );
 
   const spoolRepo = createSpoolRepository(db);
   const historyRepo = createSpoolHistoryRepository(db);
@@ -84,9 +95,12 @@ export function createServices(
     syncPrinters(config.printers, printerPool, bus, mqttLog);
   });
 
-  log.info({
-    printerCount: initialConfig.printers.length,
-  }, "Config loaded");
+  log.info(
+    {
+      printerCount: initialConfig.printers.length,
+    },
+    "Config loaded",
+  );
 
   return {
     configStore,

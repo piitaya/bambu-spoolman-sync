@@ -40,7 +40,8 @@ export function SpoolList({ groups, onOpen }: Props) {
                 style={{
                   display: "block",
                   width: "100%",
-                  padding: "var(--mantine-spacing-sm) var(--mantine-spacing-md)",
+                  padding:
+                    "var(--mantine-spacing-sm) var(--mantine-spacing-md)",
                   borderBottom: "1px solid var(--mantine-color-default-border)",
                 }}
               >

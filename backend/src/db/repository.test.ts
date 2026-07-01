@@ -1,6 +1,9 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { createTestDb } from "../test-helpers/db.js";
-import { createSpoolRepository, type SpoolRepository } from "./spool.repository.js";
+import {
+  createSpoolRepository,
+  type SpoolRepository,
+} from "./spool.repository.js";
 
 let spoolRepo: SpoolRepository;
 
@@ -41,7 +44,10 @@ describe("SpoolRepository", () => {
 
   it("updates a spool", () => {
     spoolRepo.create(baseSpool);
-    spoolRepo.update("TAG-1", { remain: 50, lastUpdated: "2024-02-01T00:00:00.000Z" });
+    spoolRepo.update("TAG-1", {
+      remain: 50,
+      lastUpdated: "2024-02-01T00:00:00.000Z",
+    });
     const row = spoolRepo.findByTagId("TAG-1");
     expect(row!.remain).toBe(50);
     expect(row!.lastUpdated).toBe("2024-02-01T00:00:00.000Z");
@@ -58,9 +64,21 @@ describe("SpoolRepository", () => {
   });
 
   it("lists spools ordered by lastUpdated DESC", () => {
-    spoolRepo.create({ ...baseSpool, tagId: "A", lastUpdated: "2024-01-01T00:00:00.000Z" });
-    spoolRepo.create({ ...baseSpool, tagId: "B", lastUpdated: "2024-03-01T00:00:00.000Z" });
-    spoolRepo.create({ ...baseSpool, tagId: "C", lastUpdated: "2024-02-01T00:00:00.000Z" });
+    spoolRepo.create({
+      ...baseSpool,
+      tagId: "A",
+      lastUpdated: "2024-01-01T00:00:00.000Z",
+    });
+    spoolRepo.create({
+      ...baseSpool,
+      tagId: "B",
+      lastUpdated: "2024-03-01T00:00:00.000Z",
+    });
+    spoolRepo.create({
+      ...baseSpool,
+      tagId: "C",
+      lastUpdated: "2024-02-01T00:00:00.000Z",
+    });
     const tags = spoolRepo.list().map((r) => r.tagId);
     expect(tags).toEqual(["B", "C", "A"]);
   });

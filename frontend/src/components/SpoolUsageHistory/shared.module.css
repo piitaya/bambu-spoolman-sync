@@ -5,8 +5,18 @@
 .sessionStripe {
   background: repeating-linear-gradient(
     135deg,
-    color-mix(in oklch, var(--mantine-color-blue-filled) 55%, var(--mantine-color-body)) 0 5px,
-    color-mix(in oklch, var(--mantine-color-blue-filled) 22%, var(--mantine-color-body)) 5px 10px
+    color-mix(
+        in oklch,
+        var(--mantine-color-blue-filled) 55%,
+        var(--mantine-color-body)
+      )
+      0 5px,
+    color-mix(
+        in oklch,
+        var(--mantine-color-blue-filled) 22%,
+        var(--mantine-color-body)
+      )
+      5px 10px
   );
 }
 

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { classifyMqttError } from "./errors.js";
 
-const mqttErr = (
-  init: { code?: number | string; message?: string },
-): Error & { code?: number | string } => {
+const mqttErr = (init: {
+  code?: number | string;
+  message?: string;
+}): Error & { code?: number | string } => {
   const e = new Error(init.message ?? "") as Error & {
     code?: number | string;
   };
@@ -33,9 +34,7 @@ describe("classifyMqttError", () => {
   });
 
   it("classifies network syscall codes as unreachable", () => {
-    expect(classifyMqttError(mqttErr({ code: "EACCES" }))).toBe(
-      "unreachable",
-    );
+    expect(classifyMqttError(mqttErr({ code: "EACCES" }))).toBe("unreachable");
     expect(classifyMqttError(mqttErr({ code: "ECONNREFUSED" }))).toBe(
       "unreachable",
     );
@@ -51,16 +50,15 @@ describe("classifyMqttError", () => {
     expect(
       classifyMqttError(
         mqttErr({
-          message:
-            "connect EACCES 10.0.0.0:8883 - Local (10.0.100.1:55326)",
+          message: "connect EACCES 10.0.0.0:8883 - Local (10.0.100.1:55326)",
         }),
       ),
     ).toBe("unreachable");
   });
 
   it("returns 'other' for unknown errors", () => {
-    expect(
-      classifyMqttError(mqttErr({ message: "weird mystery error" })),
-    ).toBe("other");
+    expect(classifyMqttError(mqttErr({ message: "weird mystery error" }))).toBe(
+      "other",
+    );
   });
 });

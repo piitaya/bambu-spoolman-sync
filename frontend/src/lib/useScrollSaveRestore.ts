@@ -1,5 +1,9 @@
 import { useLayoutEffect, useRef } from "react";
-import { NavigationType, useLocation, useNavigationType } from "react-router-dom";
+import {
+  NavigationType,
+  useLocation,
+  useNavigationType,
+} from "react-router-dom";
 
 interface Result {
   panelScrollRef: React.RefObject<HTMLDivElement | null>;
@@ -25,7 +29,9 @@ export function useScrollSaveRestore(
     }
     if (!readyCount) return;
     const el =
-      effectiveView === "table" ? tableScrollRef.current : panelScrollRef.current;
+      effectiveView === "table"
+        ? tableScrollRef.current
+        : panelScrollRef.current;
     if (!el) return;
     const state = location.state as { scroll?: number } | null;
     if (typeof state?.scroll === "number") el.scrollTop = state.scroll;
@@ -34,7 +40,9 @@ export function useScrollSaveRestore(
 
   const saveScroll = () => {
     const el =
-      effectiveView === "table" ? tableScrollRef.current : panelScrollRef.current;
+      effectiveView === "table"
+        ? tableScrollRef.current
+        : panelScrollRef.current;
     if (!el) return;
     const current = window.history.state ?? {};
     window.history.replaceState(
