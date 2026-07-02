@@ -7,14 +7,15 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@pandaroo/shared": "*",
     "@fastify/static": "^9.1.0",
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^5.2.5",
     "@fastify/type-provider-typebox": "^6.1.0",
+    "@pandaroo/shared": "*",
     "@sinclair/typebox": "^0.34.49",
     "better-sqlite3": "^12.8.0",
     "drizzle-orm": "^0.45.2",
@@ -25,6 +26,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.7.5",
+    "@vitest/coverage-v8": "^2.1.9",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3",
