@@ -30,22 +30,16 @@ interface SavedViewShape {
 
 interface Props<P extends SavedViewShape> {
   views: readonly P[];
-  /** Structured toolbar state currently displayed. */
   currentState: unknown;
   busy?: boolean;
   onApply: (view: P) => void;
   onSave: (name: string) => void;
-  /** Overwrite an existing saved view with the current filters. */
-  onUpdate: (id: string, name: string) => void;
+  /** Overwrites the view's state with the current filters. */
+  onUpdate: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
 }
 
-/**
- * Bookmark menu listing the user's saved filters: click to apply,
- * inline rename/delete, and a save action that either creates a new
- * entry or updates the one currently applied.
- */
 export function SavedViewMenu<P extends SavedViewShape>({
   views,
   currentState,
@@ -62,16 +56,21 @@ export function SavedViewMenu<P extends SavedViewShape>({
   const [renaming, setRenaming] = useState<P | null>(null);
   const [deleting, setDeleting] = useState<P | null>(null);
   const [name, setName] = useState("");
-  // Last view the user applied — the "current" one the update choice
-  // targets once the filters have diverged from it.
+  // Last applied view — the target of the "update" save choice.
   const [appliedId, setAppliedId] = useState<string | null>(null);
 
   const hasActive = views.some((p) =>
     savedViewStatesEqual(p.state, currentState),
   );
   const current = views.find((p) => p.id === appliedId) ?? null;
+  // No update offer when the filters already match a saved view exactly.
   const canUpdateCurrent =
-    current !== null && !savedViewStatesEqual(current.state, currentState);
+    current !== null &&
+    !hasActive &&
+    !savedViewStatesEqual(current.state, currentState);
+  // Falls back to "create" if the applied view is deleted remotely
+  // while the modal is open.
+  const updating = saveMode === "update" && canUpdateCurrent;
 
   const openSave = () => {
     setName("");
@@ -80,8 +79,8 @@ export function SavedViewMenu<P extends SavedViewShape>({
   };
 
   const submitSave = () => {
-    if (saveMode === "update" && current) {
-      onUpdate(current.id, current.name);
+    if (updating && current) {
+      onUpdate(current.id);
     } else {
       const trimmed = name.trim();
       if (!trimmed) return;
@@ -140,6 +139,8 @@ export function SavedViewMenu<P extends SavedViewShape>({
                   <Group gap={4} wrap="nowrap">
                     <ActionIcon
                       component="div"
+                      role="button"
+                      tabIndex={0}
                       variant="subtle"
                       color="gray"
                       size="sm"
@@ -149,11 +150,21 @@ export function SavedViewMenu<P extends SavedViewShape>({
                         setName(view.name);
                         setRenaming(view);
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setName(view.name);
+                          setRenaming(view);
+                        }
+                      }}
                     >
                       <IconPencil size={14} />
                     </ActionIcon>
                     <ActionIcon
                       component="div"
+                      role="button"
+                      tabIndex={0}
                       variant="subtle"
                       color="gray"
                       size="sm"
@@ -161,6 +172,13 @@ export function SavedViewMenu<P extends SavedViewShape>({
                       onClick={(e) => {
                         e.stopPropagation();
                         setDeleting(view);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDeleting(view);
+                        }
                       }}
                     >
                       <IconTrash size={14} />
@@ -206,7 +224,7 @@ export function SavedViewMenu<P extends SavedViewShape>({
               </Stack>
             </Radio.Group>
           )}
-          {saveMode === "new" && (
+          {!updating && (
             <TextInput
               label={t("views.name_label")}
               placeholder={t("views.name_placeholder")}
@@ -222,7 +240,7 @@ export function SavedViewMenu<P extends SavedViewShape>({
             </Button>
             <Button
               loading={busy}
-              disabled={saveMode === "new" && !name.trim()}
+              disabled={!updating && !name.trim()}
               onClick={submitSave}
             >
               {t("common.save")}

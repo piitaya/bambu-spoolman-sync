@@ -1,8 +1,5 @@
-// Pure helpers for saved views: named, saved toolbar states persisted
-// in the backend config (shared across devices via SSE). A saved view stores
-// the structured toolbar state; each toolbar owns the conversion between
-// its filter model and the stored shape, including graceful fallbacks
-// for values that no longer exist.
+// Pure helpers for saved views (named toolbar states stored in the
+// backend config). Each toolbar owns its state <-> view conversion.
 
 interface SavedViewLike {
   id: string;
@@ -11,7 +8,12 @@ interface SavedViewLike {
 }
 
 function stable(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(stable);
+  if (Array.isArray(value)) {
+    // Arrays are set-like multi-select filters — order must not matter.
+    return value
+      .map(stable)
+      .sort((a, b) => (JSON.stringify(a) < JSON.stringify(b) ? -1 : 1));
+  }
   if (value && typeof value === "object") {
     return Object.fromEntries(
       Object.keys(value as Record<string, unknown>)
@@ -44,10 +46,18 @@ export function addSavedView<P extends SavedViewLike>(
 export function updateSavedView<P extends SavedViewLike>(
   views: readonly P[],
   id: string,
-  name: string,
   state: P["state"],
 ): P[] {
-  return views.map((p) => (p.id === id ? { ...p, name, state } : p));
+  return views.map((p) => (p.id === id ? { ...p, state } : p));
+}
+
+/** Restore a stored value only if it's still a valid choice. */
+export function memberOr<T extends string>(
+  allowed: readonly T[],
+  value: string,
+  fallback: T,
+): T {
+  return allowed.includes(value as T) ? (value as T) : fallback;
 }
 
 export function renameSavedView<P extends SavedViewLike>(

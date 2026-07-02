@@ -33,6 +33,15 @@ describe("savedViewStatesEqual", () => {
     expect(savedViewStatesEqual(a, reordered)).toBe(true);
   });
 
+  it("ignores array order (multi-select filters are sets)", () => {
+    expect(
+      savedViewStatesEqual(
+        makeState({ materials: ["PLA", "PETG"] }),
+        makeState({ materials: ["PETG", "PLA"] }),
+      ),
+    ).toBe(true);
+  });
+
   it("distinguishes different states", () => {
     expect(savedViewStatesEqual(makeState({ stock: "low" }), makeState())).toBe(
       false,
@@ -59,10 +68,10 @@ describe("saved view list operations", () => {
     expect(base).toHaveLength(2);
   });
 
-  it("updates name and state of the matching view", () => {
+  it("updates the state of the matching view, keeping its name", () => {
     const state = makeState({ stock: "full" });
-    const next = updateSavedView(base, "a", "Updated", state);
-    expect(next[0]).toEqual({ id: "a", name: "Updated", state });
+    const next = updateSavedView(base, "a", state);
+    expect(next[0]).toEqual({ id: "a", name: "One", state });
     expect(next[1]).toEqual(base[1]);
   });
 

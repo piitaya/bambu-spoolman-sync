@@ -13,9 +13,8 @@ export const PrinterSchema = Type.Object({
   access_code: Type.String({ minLength: 1 }),
   enabled: Type.Boolean({ default: true }),
 });
-// sort.field and group_by stay open strings on purpose: removing or
-// renaming one in the frontend must never make stored configs invalid.
-// Unknown values fall back to defaults when the saved view is applied.
+// sort.field and group_by are open strings: removing a field in the
+// frontend must not invalidate stored configs.
 const SavedViewSortSchema = Type.Object(
   {
     field: Type.String({ minLength: 1 }),
@@ -70,10 +69,23 @@ function parseConfig(data: unknown): Config {
   const coerced = Value.Default(ConfigSchema, Value.Clone(data));
   Value.Clean(ConfigSchema, coerced);
   if (!Value.Check(ConfigSchema, coerced)) {
-    const errors = [...Value.Errors(ConfigSchema, coerced)];
-    throw new Error(
-      `Invalid config: ${errors.map((e) => `${e.path}: ${e.message}`).join("; ")}`,
-    );
+    // Drop invalid saved views rather than refusing to boot; fail only
+    // if the rest of the config is broken too.
+    const c = coerced as Record<string, unknown>;
+    for (const [key, schema] of [
+      ["spool_views", SpoolSavedViewSchema],
+      ["filament_views", FilamentSavedViewSchema],
+    ] as const) {
+      if (Array.isArray(c[key])) {
+        c[key] = (c[key] as unknown[]).filter((v) => Value.Check(schema, v));
+      }
+    }
+    if (!Value.Check(ConfigSchema, coerced)) {
+      const errors = [...Value.Errors(ConfigSchema, coerced)];
+      throw new Error(
+        `Invalid config: ${errors.map((e) => `${e.path}: ${e.message}`).join("; ")}`,
+      );
+    }
   }
   return coerced;
 }

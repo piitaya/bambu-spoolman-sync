@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadConfig, saveConfig, ConfigSchema } from "./config.js";
@@ -101,6 +101,28 @@ describe("ConfigSchema", () => {
 });
 
 describe("loadConfig / saveConfig", () => {
+  it("drops invalid saved views instead of refusing to load", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "bsync-"));
+    const path = join(dir, "config.json");
+    try {
+      await writeFile(
+        path,
+        JSON.stringify({
+          printers: [],
+          spool_views: [
+            { id: "bad", name: "x", state: { stock: "bogus" } },
+            { id: "ok", name: "Low stock", state: { stock: "low" } },
+          ],
+        }),
+      );
+      const c = await loadConfig(path);
+      expect(c.spool_views.map((v) => v.id)).toEqual(["ok"]);
+      expect(c.printers).toEqual([]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it("returns defaults when the file does not exist", async () => {
     const dir = await mkdtemp(join(tmpdir(), "bsync-"));
     try {

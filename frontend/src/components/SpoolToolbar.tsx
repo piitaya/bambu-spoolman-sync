@@ -39,6 +39,7 @@ import {
 } from "../lib/colorFamily";
 import { ColorSwatch } from "./ColorSwatch";
 import { PillPicker } from "./PillPicker";
+import { memberOr } from "../lib/savedViews";
 import { SavedViewMenu } from "./SavedViewMenu";
 import { spoolHexes } from "./spoolLabel";
 
@@ -351,7 +352,11 @@ export function SpoolToolbar(props: Props) {
   const [opened, { open, close }] = useDisclosure(false);
   const savedViews = useSpoolSavedViews();
 
-  const currentState = spoolSavedViewState(filters, sort, groupBy);
+  // A variant drill-in narrows the list beyond what a view captures.
+  const currentState =
+    filters.variantIds.length > 0
+      ? null
+      : spoolSavedViewState(filters, sort, groupBy);
 
   const applySavedView = (state: SpoolSavedViewState) => {
     const applied = applySpoolSavedViewState(state);
@@ -400,8 +405,12 @@ export function SpoolToolbar(props: Props) {
             currentState={currentState}
             busy={savedViews.busy}
             onApply={(view) => applySavedView(view.state)}
-            onSave={(name) => savedViews.save(name, currentState)}
-            onUpdate={(id, name) => savedViews.update(id, name, currentState)}
+            onSave={(name) =>
+              savedViews.save(name, spoolSavedViewState(filters, sort, groupBy))
+            }
+            onUpdate={(id) =>
+              savedViews.update(id, spoolSavedViewState(filters, sort, groupBy))
+            }
             onRename={savedViews.rename}
             onDelete={savedViews.remove}
           />
@@ -727,11 +736,7 @@ export function getSpoolGroupLabel(
   return key;
 }
 
-/**
- * Snapshot of the toolbar state stored in a saved view. The search text, `variantIds` (a
- * drill-in from the filaments page) and the view are intentionally
- * not part of a saved view.
- */
+/** Search text, `variantIds` and display mode are intentionally not saved. */
 export function spoolSavedViewState(
   filters: SpoolFilters,
   sort: SpoolSort,
@@ -749,11 +754,7 @@ export function spoolSavedViewState(
   };
 }
 
-/**
- * Convert a stored saved view back to toolbar state. Values that no longer
- * exist (removed sort field, renamed group, unknown color family) fall
- * back to defaults instead of failing.
- */
+/** Stored values that no longer exist fall back to defaults. */
 export function applySpoolSavedViewState(state: SpoolSavedViewState): {
   filters: SpoolFilters;
   sort: SpoolSort;
@@ -768,18 +769,14 @@ export function applySpoolSavedViewState(state: SpoolSavedViewState): {
         COLOR_FAMILIES.includes(c as ColorFamily),
       ),
       variantIds: [],
-      stock: STOCK_LEVELS.includes(state.stock) ? state.stock : "all",
+      stock: memberOr(STOCK_LEVELS, state.stock, "all"),
       amsOnly: state.ams_only,
       noRemain: state.no_remain,
     },
-    sort: SORT_FIELDS.includes(state.sort.field as SpoolSortField)
-      ? {
-          field: state.sort.field as SpoolSortField,
-          direction: state.sort.direction === "desc" ? "desc" : "asc",
-        }
-      : DEFAULT_SORT,
-    groupBy: SPOOL_GROUP_VALUES.includes(state.group_by as SpoolGroupBy)
-      ? (state.group_by as SpoolGroupBy)
-      : DEFAULT_GROUP_BY,
+    sort: {
+      field: memberOr(SORT_FIELDS, state.sort.field, DEFAULT_SORT.field),
+      direction: state.sort.direction === "desc" ? "desc" : "asc",
+    },
+    groupBy: memberOr(SPOOL_GROUP_VALUES, state.group_by, DEFAULT_GROUP_BY),
   };
 }

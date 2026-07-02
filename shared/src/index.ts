@@ -133,11 +133,7 @@ export type PrinterPatch = Partial<PrinterConfig>;
 // ---------------------------------------------------------------------------
 
 export interface SavedViewSort {
-  /**
-   * Sort field name. Kept as an open string so removing or renaming a
-   * sort field never invalidates stored configs; unknown values fall
-   * back to the default sort when the saved view is applied.
-   */
+  /** Open string: a removed sort field must not invalidate stored configs. */
   field: string;
   direction: "asc" | "desc";
 }
@@ -150,7 +146,7 @@ export interface SpoolSavedViewState {
   ams_only: boolean;
   no_remain: boolean;
   sort: SavedViewSort;
-  /** Open string for the same reason as `SavedViewSort.field`. */
+  /** Open string, same reason as `SavedViewSort.field`. */
   group_by: string;
 }
 

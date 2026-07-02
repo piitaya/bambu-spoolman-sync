@@ -402,9 +402,8 @@ export const useRefreshMapping = () => {
 };
 
 // ---------------------------------------------------------------------------
-// Saved views — stored in the backend config (`spool_views` /
-// `filament_views`) so they follow the user across browsers; the
-// config-changed SSE event keeps every client in sync.
+// Saved views — stored in the backend config, synced across clients by
+// the config-changed SSE event
 // ---------------------------------------------------------------------------
 
 function useConfigSavedViews<F extends "spool_views" | "filament_views">(
@@ -412,61 +411,58 @@ function useConfigSavedViews<F extends "spool_views" | "filament_views">(
 ) {
   type View = Config[F][number];
   const { t } = useTranslation();
+  const qc = useQueryClient();
+  const toast = useToasts();
   const { data: config } = useConfig();
 
-  const putViews = (views: View[]) =>
-    api.putConfig({ ...config!, [field]: views } as Config);
-
-  const saveMutation = useMutationWithToast({
-    mutationFn: putViews,
-    successMessage: t("views.saved"),
-    invalidate: [queryKeys.config],
-  });
-  const renameMutation = useMutationWithToast({
-    mutationFn: putViews,
-    successMessage: t("views.renamed"),
-    invalidate: [queryKeys.config],
-  });
-  const updateMutation = useMutationWithToast({
-    mutationFn: putViews,
-    successMessage: t("views.updated"),
-    invalidate: [queryKeys.config],
-  });
-  const removeMutation = useMutationWithToast({
-    mutationFn: putViews,
-    successMessage: t("views.deleted"),
-    invalidate: [queryKeys.config],
+  const mutation = useMutation({
+    // Re-read before writing: the PUT replaces the whole config, and a
+    // stale cached copy would resurrect deleted views or clobber
+    // concurrent changes.
+    mutationFn: async ({
+      apply,
+    }: {
+      apply: (views: View[]) => View[];
+      successMessage: string;
+    }) => {
+      const fresh = await api.getConfig();
+      const views = (fresh[field] ?? []) as View[];
+      return api.putConfig({ ...fresh, [field]: apply(views) } as Config);
+    },
+    onSuccess: (updated, { successMessage }) => {
+      qc.setQueryData(queryKeys.config, updated);
+      toast.success(successMessage);
+    },
+    onError: toast.error,
   });
 
   const views = (config?.[field] ?? []) as readonly View[];
 
   return {
-    /** False until the config is loaded; mutations are no-ops before that. */
     ready: config != null,
     views,
-    busy:
-      saveMutation.isPending ||
-      renameMutation.isPending ||
-      updateMutation.isPending ||
-      removeMutation.isPending,
-    save: (name: string, state: View["state"]) => {
-      if (!config) return;
-      saveMutation.mutate(
-        addSavedView(views, { id: createSavedViewId(), name, state } as View),
-      );
-    },
-    update: (id: string, name: string, state: View["state"]) => {
-      if (!config) return;
-      updateMutation.mutate(updateSavedView(views, id, name, state));
-    },
-    rename: (id: string, name: string) => {
-      if (!config) return;
-      renameMutation.mutate(renameSavedView(views, id, name));
-    },
-    remove: (id: string) => {
-      if (!config) return;
-      removeMutation.mutate(removeSavedView(views, id));
-    },
+    busy: mutation.isPending,
+    save: (name: string, state: View["state"]) =>
+      mutation.mutate({
+        apply: (v) =>
+          addSavedView(v, { id: createSavedViewId(), name, state } as View),
+        successMessage: t("views.saved"),
+      }),
+    update: (id: string, state: View["state"]) =>
+      mutation.mutate({
+        apply: (v) => updateSavedView(v, id, state),
+        successMessage: t("views.updated"),
+      }),
+    rename: (id: string, name: string) =>
+      mutation.mutate({
+        apply: (v) => renameSavedView(v, id, name),
+        successMessage: t("views.renamed"),
+      }),
+    remove: (id: string) =>
+      mutation.mutate({
+        apply: (v) => removeSavedView(v, id),
+        successMessage: t("views.deleted"),
+      }),
   };
 }
 

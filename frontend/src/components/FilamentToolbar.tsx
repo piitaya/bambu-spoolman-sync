@@ -36,6 +36,7 @@ import {
 } from "../lib/colorFamily";
 import { ColorSwatch } from "./ColorSwatch";
 import { PillPicker } from "./PillPicker";
+import { memberOr } from "../lib/savedViews";
 import { SavedViewMenu } from "./SavedViewMenu";
 import { spoolHexes } from "./spoolLabel";
 
@@ -394,7 +395,7 @@ export function FilamentToolbar(props: Props) {
             busy={savedViews.busy}
             onApply={(view) => applySavedView(view.state)}
             onSave={(name) => savedViews.save(name, currentState)}
-            onUpdate={(id, name) => savedViews.update(id, name, currentState)}
+            onUpdate={(id) => savedViews.update(id, currentState)}
             onRename={savedViews.rename}
             onDelete={savedViews.remove}
           />
@@ -701,7 +702,7 @@ export function getFilamentGroupLabel(
   return key;
 }
 
-/** Snapshot of the toolbar state stored in a saved view (search text and display mode excluded). */
+/** Search text and display mode are intentionally not saved. */
 export function filamentSavedViewState(
   filters: FilamentFilters,
   sort: FilamentSort,
@@ -717,11 +718,7 @@ export function filamentSavedViewState(
   };
 }
 
-/**
- * Convert a stored saved view back to toolbar state. Values that no longer
- * exist (removed sort field, renamed group, unknown color family) fall
- * back to defaults instead of failing.
- */
+/** Stored values that no longer exist fall back to defaults. */
 export function applyFilamentSavedViewState(state: FilamentSavedViewState): {
   filters: FilamentFilters;
   sort: FilamentSort;
@@ -735,18 +732,12 @@ export function applyFilamentSavedViewState(state: FilamentSavedViewState): {
       colorFamilies: state.color_families.filter((c): c is ColorFamily =>
         COLOR_FAMILIES.includes(c as ColorFamily),
       ),
-      ownership: OWNERSHIP_VALUES.includes(state.ownership)
-        ? state.ownership
-        : "all",
+      ownership: memberOr(OWNERSHIP_VALUES, state.ownership, "all"),
     },
-    sort: SORT_FIELDS.includes(state.sort.field as FilamentSortField)
-      ? {
-          field: state.sort.field as FilamentSortField,
-          direction: state.sort.direction === "desc" ? "desc" : "asc",
-        }
-      : DEFAULT_SORT,
-    groupBy: FILAMENT_GROUP_VALUES.includes(state.group_by as FilamentGroupBy)
-      ? (state.group_by as FilamentGroupBy)
-      : DEFAULT_GROUP_BY,
+    sort: {
+      field: memberOr(SORT_FIELDS, state.sort.field, DEFAULT_SORT.field),
+      direction: state.sort.direction === "desc" ? "desc" : "asc",
+    },
+    groupBy: memberOr(FILAMENT_GROUP_VALUES, state.group_by, DEFAULT_GROUP_BY),
   };
 }
