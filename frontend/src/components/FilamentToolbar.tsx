@@ -22,9 +22,11 @@ import {
   IconSortDescending,
   IconX,
 } from "@tabler/icons-react";
+import type { FilamentSavedViewState } from "@pandaroo/shared";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { CatalogEntry, Spool } from "../api";
+import { useFilamentSavedViews } from "../hooks";
 import { useIsMobile } from "../lib/breakpoints";
 import {
   COLOR_FAMILIES,
@@ -34,6 +36,8 @@ import {
 } from "../lib/colorFamily";
 import { ColorSwatch } from "./ColorSwatch";
 import { PillPicker } from "./PillPicker";
+import { memberOr } from "../lib/savedViews";
+import { SavedViewMenu } from "./SavedViewMenu";
 import { spoolHexes } from "./spoolLabel";
 
 export interface FilamentOwnership {
@@ -342,6 +346,16 @@ export function FilamentToolbar(props: Props) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [opened, { open, close }] = useDisclosure(false);
+  const savedViews = useFilamentSavedViews();
+
+  const currentState = filamentSavedViewState(filters, sort, groupBy);
+
+  const applySavedView = (state: FilamentSavedViewState) => {
+    const applied = applyFilamentSavedViewState(state);
+    onFiltersChange({ ...applied.filters, search: filters.search });
+    onSortChange(applied.sort);
+    onGroupByChange(applied.groupBy);
+  };
 
   const facetCount =
     filters.materials.length +
@@ -374,6 +388,18 @@ export function FilamentToolbar(props: Props) {
           }
           style={{ flex: 1 }}
         />
+        {savedViews.ready && (
+          <SavedViewMenu
+            views={savedViews.views}
+            currentState={currentState}
+            busy={savedViews.busy}
+            onApply={(view) => applySavedView(view.state)}
+            onSave={(name) => savedViews.save(name, currentState)}
+            onUpdate={(id) => savedViews.update(id, currentState)}
+            onRename={savedViews.rename}
+            onDelete={savedViews.remove}
+          />
+        )}
         {isMobile ? (
           <Button
             variant={facetCount > 0 ? "filled" : "default"}
@@ -674,4 +700,44 @@ export function getFilamentGroupLabel(
   if (groupBy === "color_family") return t(`color_family.${key}`);
   if (groupBy === "owned") return t(`filaments.ownership.${key}`);
   return key;
+}
+
+/** Search text and display mode are intentionally not saved. */
+export function filamentSavedViewState(
+  filters: FilamentFilters,
+  sort: FilamentSort,
+  groupBy: FilamentGroupBy,
+): FilamentSavedViewState {
+  return {
+    materials: filters.materials,
+    products: filters.products,
+    color_families: filters.colorFamilies,
+    ownership: filters.ownership,
+    sort: { field: sort.field, direction: sort.direction },
+    group_by: groupBy,
+  };
+}
+
+/** Stored values that no longer exist fall back to defaults. */
+export function applyFilamentSavedViewState(state: FilamentSavedViewState): {
+  filters: FilamentFilters;
+  sort: FilamentSort;
+  groupBy: FilamentGroupBy;
+} {
+  return {
+    filters: {
+      search: "",
+      materials: [...state.materials],
+      products: [...state.products],
+      colorFamilies: state.color_families.filter((c): c is ColorFamily =>
+        COLOR_FAMILIES.includes(c as ColorFamily),
+      ),
+      ownership: memberOr(OWNERSHIP_VALUES, state.ownership, "all"),
+    },
+    sort: {
+      field: memberOr(SORT_FIELDS, state.sort.field, DEFAULT_SORT.field),
+      direction: state.sort.direction === "desc" ? "desc" : "asc",
+    },
+    groupBy: memberOr(FILAMENT_GROUP_VALUES, state.group_by, DEFAULT_GROUP_BY),
+  };
 }

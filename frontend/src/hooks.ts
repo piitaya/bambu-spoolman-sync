@@ -18,6 +18,13 @@ import {
   type AmsLocation,
 } from "./api";
 import type { SpoolReading } from "@pandaroo/shared";
+import {
+  addSavedView,
+  createSavedViewId,
+  removeSavedView,
+  renameSavedView,
+  updateSavedView,
+} from "./lib/savedViews";
 
 const SPOOL_HISTORY_ROOT = ["spool-history"] as const;
 
@@ -393,3 +400,72 @@ export const useRefreshMapping = () => {
     onError: toast.error,
   });
 };
+
+// ---------------------------------------------------------------------------
+// Saved views — stored in the backend config, synced across clients by
+// the config-changed SSE event
+// ---------------------------------------------------------------------------
+
+function useConfigSavedViews<F extends "spool_views" | "filament_views">(
+  field: F,
+) {
+  type View = Config[F][number];
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const toast = useToasts();
+  const { data: config } = useConfig();
+
+  const mutation = useMutation({
+    // Re-read before writing: the PUT replaces the whole config, and a
+    // stale cached copy would resurrect deleted views or clobber
+    // concurrent changes.
+    mutationFn: async ({
+      apply,
+    }: {
+      apply: (views: View[]) => View[];
+      successMessage: string;
+    }) => {
+      const fresh = await api.getConfig();
+      const views = (fresh[field] ?? []) as View[];
+      return api.putConfig({ ...fresh, [field]: apply(views) } as Config);
+    },
+    onSuccess: (updated, { successMessage }) => {
+      qc.setQueryData(queryKeys.config, updated);
+      toast.success(successMessage);
+    },
+    onError: toast.error,
+  });
+
+  const views = (config?.[field] ?? []) as readonly View[];
+
+  return {
+    ready: config != null,
+    views,
+    busy: mutation.isPending,
+    save: (name: string, state: View["state"]) =>
+      mutation.mutate({
+        apply: (v) =>
+          addSavedView(v, { id: createSavedViewId(), name, state } as View),
+        successMessage: t("views.saved"),
+      }),
+    update: (id: string, state: View["state"]) =>
+      mutation.mutate({
+        apply: (v) => updateSavedView(v, id, state),
+        successMessage: t("views.updated"),
+      }),
+    rename: (id: string, name: string) =>
+      mutation.mutate({
+        apply: (v) => renameSavedView(v, id, name),
+        successMessage: t("views.renamed"),
+      }),
+    remove: (id: string) =>
+      mutation.mutate({
+        apply: (v) => removeSavedView(v, id),
+        successMessage: t("views.deleted"),
+      }),
+  };
+}
+
+export const useSpoolSavedViews = () => useConfigSavedViews("spool_views");
+export const useFilamentSavedViews = () =>
+  useConfigSavedViews("filament_views");

@@ -24,6 +24,24 @@
     "right_nozzle_short": "R",
     "drag_handle": "Drag to reorder"
   },
+  "views": {
+    "label": "Saved views",
+    "empty": "No saved views yet",
+    "save_current": "Save view…",
+    "save_title": "Save view",
+    "name_label": "Name",
+    "name_placeholder": "e.g. Low stock, PLA by color",
+    "rename": "Rename view",
+    "delete": "Delete view",
+    "delete_confirm_title": "Delete view",
+    "delete_confirm_body": "Delete \"{{name}}\"?",
+    "saved": "View saved",
+    "renamed": "View renamed",
+    "deleted": "View deleted",
+    "updated": "View updated",
+    "update_current": "Update “{{name}}”",
+    "create_new": "Create a new view"
+  },
   "dashboard": {
     "title": "Dashboard",
     "help_aria_label": "What do the slot statuses mean?",

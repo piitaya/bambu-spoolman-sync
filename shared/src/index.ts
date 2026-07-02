@@ -127,8 +127,51 @@ export interface PrinterConfig {
 
 export type PrinterPatch = Partial<PrinterConfig>;
 
+// ---------------------------------------------------------------------------
+// Saved views — saved toolbar states (filters, sort, grouping) for quick
+// re-use, e.g. "Low stock" or "PLA by color".
+// ---------------------------------------------------------------------------
+
+export interface SavedViewSort {
+  /** Open string: a removed sort field must not invalidate stored configs. */
+  field: string;
+  direction: "asc" | "desc";
+}
+
+export interface SpoolSavedViewState {
+  materials: string[];
+  products: string[];
+  color_families: string[];
+  stock: "all" | "low" | "full";
+  ams_only: boolean;
+  no_remain: boolean;
+  sort: SavedViewSort;
+  /** Open string, same reason as `SavedViewSort.field`. */
+  group_by: string;
+}
+
+export interface FilamentSavedViewState {
+  materials: string[];
+  products: string[];
+  color_families: string[];
+  ownership: "all" | "owned" | "not_owned";
+  sort: SavedViewSort;
+  group_by: string;
+}
+
+export interface SavedView<S> {
+  id: string;
+  name: string;
+  state: S;
+}
+
+export type SpoolSavedView = SavedView<SpoolSavedViewState>;
+export type FilamentSavedView = SavedView<FilamentSavedViewState>;
+
 export interface Config {
   printers: PrinterConfig[];
+  spool_views: SpoolSavedView[];
+  filament_views: FilamentSavedView[];
 }
 
 // ---------------------------------------------------------------------------

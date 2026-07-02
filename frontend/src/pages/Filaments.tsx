@@ -75,13 +75,29 @@ export default function FilamentsPage() {
   const effectiveView: FilamentView = isMobile ? "list" : view;
   const navigate = useNavigate();
 
-  const [debouncedFilters] = useDebouncedValue(filters, 250);
+  // Mirror filter/sort/view into the URL for back-navigation and sharing.
+  // Only the search text is debounced: facet clicks and saved views change
+  // several fields at once and must hit the URL atomically.
+  const [debouncedSearch] = useDebouncedValue(filters.search, 250);
   useEffect(() => {
-    setSearchParams(
-      filamentStateToSearchParams(debouncedFilters, sort, view, groupBy),
-      { replace: true },
+    const next = filamentStateToSearchParams(
+      { ...filters, search: debouncedSearch },
+      sort,
+      view,
+      groupBy,
     );
-  }, [debouncedFilters, sort, view, groupBy, setSearchParams]);
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [
+    filters,
+    debouncedSearch,
+    sort,
+    view,
+    groupBy,
+    searchParams,
+    setSearchParams,
+  ]);
 
   const rows = useMemo<FilamentRow[]>(
     () => aggregateBySku(catalog ?? [], spools ?? []),
