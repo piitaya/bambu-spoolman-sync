@@ -24,6 +24,24 @@
     "right_nozzle_short": "D",
     "drag_handle": "Glisser pour réordonner"
   },
+  "views": {
+    "label": "Vues enregistrées",
+    "empty": "Aucune vue enregistrée",
+    "save_current": "Enregistrer la vue…",
+    "save_title": "Enregistrer la vue",
+    "name_label": "Nom",
+    "name_placeholder": "ex. Stock faible, PLA par couleur",
+    "rename": "Renommer la vue",
+    "delete": "Supprimer la vue",
+    "delete_confirm_title": "Supprimer la vue",
+    "delete_confirm_body": "Supprimer « {{name}} » ?",
+    "saved": "Vue enregistrée",
+    "renamed": "Vue renommée",
+    "deleted": "Vue supprimée",
+    "updated": "Vue mise à jour",
+    "update_current": "Mettre à jour « {{name}} »",
+    "create_new": "Créer une nouvelle vue"
+  },
   "dashboard": {
     "title": "Tableau de bord",
     "help_aria_label": "Que signifient les statuts des slots ?",

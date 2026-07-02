@@ -13,8 +13,57 @@ export const PrinterSchema = Type.Object({
   access_code: Type.String({ minLength: 1 }),
   enabled: Type.Boolean({ default: true }),
 });
+// sort.field and group_by stay open strings on purpose: removing or
+// renaming one in the frontend must never make stored configs invalid.
+// Unknown values fall back to defaults when the saved view is applied.
+const SavedViewSortSchema = Type.Object(
+  {
+    field: Type.String({ minLength: 1 }),
+    direction: Type.Union([Type.Literal("asc"), Type.Literal("desc")]),
+  },
+  { default: { field: "product", direction: "asc" } },
+);
+const savedViewStateBase = {
+  materials: Type.Array(Type.String(), { default: [] }),
+  products: Type.Array(Type.String(), { default: [] }),
+  color_families: Type.Array(Type.String(), { default: [] }),
+  sort: SavedViewSortSchema,
+  group_by: Type.String({ minLength: 1, default: "product" }),
+};
+export const SpoolSavedViewSchema = Type.Object({
+  id: Type.String({ minLength: 1 }),
+  name: Type.String({ minLength: 1 }),
+  state: Type.Object(
+    {
+      ...savedViewStateBase,
+      stock: Type.Union(
+        [Type.Literal("all"), Type.Literal("low"), Type.Literal("full")],
+        { default: "all" },
+      ),
+      ams_only: Type.Boolean({ default: false }),
+      no_remain: Type.Boolean({ default: false }),
+    },
+    { default: {} },
+  ),
+});
+export const FilamentSavedViewSchema = Type.Object({
+  id: Type.String({ minLength: 1 }),
+  name: Type.String({ minLength: 1 }),
+  state: Type.Object(
+    {
+      ...savedViewStateBase,
+      ownership: Type.Union(
+        [Type.Literal("all"), Type.Literal("owned"), Type.Literal("not_owned")],
+        { default: "all" },
+      ),
+    },
+    { default: {} },
+  ),
+});
 export const ConfigSchema = Type.Object({
   printers: Type.Array(PrinterSchema, { default: [] }),
+  spool_views: Type.Array(SpoolSavedViewSchema, { default: [] }),
+  filament_views: Type.Array(FilamentSavedViewSchema, { default: [] }),
 });
 
 function parseConfig(data: unknown): Config {

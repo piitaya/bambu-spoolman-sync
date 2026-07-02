@@ -18,6 +18,13 @@ import {
   type AmsLocation,
 } from "./api";
 import type { SpoolReading } from "@pandaroo/shared";
+import {
+  addSavedView,
+  createSavedViewId,
+  removeSavedView,
+  renameSavedView,
+  updateSavedView,
+} from "./lib/savedViews";
 
 const SPOOL_HISTORY_ROOT = ["spool-history"] as const;
 
@@ -393,3 +400,76 @@ export const useRefreshMapping = () => {
     onError: toast.error,
   });
 };
+
+// ---------------------------------------------------------------------------
+// Saved views — stored in the backend config (`spool_views` /
+// `filament_views`) so they follow the user across browsers; the
+// config-changed SSE event keeps every client in sync.
+// ---------------------------------------------------------------------------
+
+function useConfigSavedViews<F extends "spool_views" | "filament_views">(
+  field: F,
+) {
+  type View = Config[F][number];
+  const { t } = useTranslation();
+  const { data: config } = useConfig();
+
+  const putViews = (views: View[]) =>
+    api.putConfig({ ...config!, [field]: views } as Config);
+
+  const saveMutation = useMutationWithToast({
+    mutationFn: putViews,
+    successMessage: t("views.saved"),
+    invalidate: [queryKeys.config],
+  });
+  const renameMutation = useMutationWithToast({
+    mutationFn: putViews,
+    successMessage: t("views.renamed"),
+    invalidate: [queryKeys.config],
+  });
+  const updateMutation = useMutationWithToast({
+    mutationFn: putViews,
+    successMessage: t("views.updated"),
+    invalidate: [queryKeys.config],
+  });
+  const removeMutation = useMutationWithToast({
+    mutationFn: putViews,
+    successMessage: t("views.deleted"),
+    invalidate: [queryKeys.config],
+  });
+
+  const views = (config?.[field] ?? []) as readonly View[];
+
+  return {
+    /** False until the config is loaded; mutations are no-ops before that. */
+    ready: config != null,
+    views,
+    busy:
+      saveMutation.isPending ||
+      renameMutation.isPending ||
+      updateMutation.isPending ||
+      removeMutation.isPending,
+    save: (name: string, state: View["state"]) => {
+      if (!config) return;
+      saveMutation.mutate(
+        addSavedView(views, { id: createSavedViewId(), name, state } as View),
+      );
+    },
+    update: (id: string, name: string, state: View["state"]) => {
+      if (!config) return;
+      updateMutation.mutate(updateSavedView(views, id, name, state));
+    },
+    rename: (id: string, name: string) => {
+      if (!config) return;
+      renameMutation.mutate(renameSavedView(views, id, name));
+    },
+    remove: (id: string) => {
+      if (!config) return;
+      removeMutation.mutate(removeSavedView(views, id));
+    },
+  };
+}
+
+export const useSpoolSavedViews = () => useConfigSavedViews("spool_views");
+export const useFilamentSavedViews = () =>
+  useConfigSavedViews("filament_views");

@@ -10,8 +10,77 @@ describe("ConfigSchema", () => {
     const coerced = Value.Default(ConfigSchema, {});
     Value.Clean(ConfigSchema, coerced);
     expect(Value.Check(ConfigSchema, coerced)).toBe(true);
-    const c = coerced as { printers?: unknown };
+    const c = coerced as {
+      printers?: unknown;
+      spool_views?: unknown;
+      filament_views?: unknown;
+    };
     expect(c.printers).toEqual([]);
+    expect(c.spool_views).toEqual([]);
+    expect(c.filament_views).toEqual([]);
+  });
+
+  it("accepts saved views and rejects malformed ones", () => {
+    const valid = Value.Default(
+      ConfigSchema,
+      Value.Clone({
+        spool_views: [
+          {
+            id: "p1",
+            name: "Low stock",
+            state: {
+              stock: "low",
+              sort: { field: "remain", direction: "asc" },
+            },
+          },
+        ],
+        filament_views: [
+          {
+            id: "p2",
+            name: "PLA",
+            state: { materials: ["PLA"], ownership: "owned" },
+          },
+        ],
+      }),
+    );
+    expect(Value.Check(ConfigSchema, valid)).toBe(true);
+
+    const invalid = Value.Default(
+      ConfigSchema,
+      Value.Clone({
+        spool_views: [{ id: "", name: "x", state: {} }],
+      }),
+    );
+    expect(Value.Check(ConfigSchema, invalid)).toBe(false);
+
+    const badStock = Value.Default(
+      ConfigSchema,
+      Value.Clone({
+        spool_views: [{ id: "p1", name: "x", state: { stock: "bogus" } }],
+      }),
+    );
+    expect(Value.Check(ConfigSchema, badStock)).toBe(false);
+  });
+
+  it("fills saved view state defaults", () => {
+    const coerced = Value.Default(
+      ConfigSchema,
+      Value.Clone({ spool_views: [{ id: "p1", name: "x" }] }),
+    );
+    Value.Clean(ConfigSchema, coerced);
+    expect(Value.Check(ConfigSchema, coerced)).toBe(true);
+    const view = (coerced as { spool_views: { state: unknown }[] })
+      .spool_views[0];
+    expect(view.state).toEqual({
+      materials: [],
+      products: [],
+      color_families: [],
+      sort: { field: "product", direction: "asc" },
+      group_by: "product",
+      stock: "all",
+      ams_only: false,
+      no_remain: false,
+    });
   });
 
   it("rejects a printer missing required fields", () => {

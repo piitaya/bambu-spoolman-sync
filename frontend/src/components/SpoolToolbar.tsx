@@ -25,9 +25,11 @@ import {
   IconSortDescending,
   IconX,
 } from "@tabler/icons-react";
+import type { SpoolSavedViewState } from "@pandaroo/shared";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Spool } from "../api";
+import { useSpoolSavedViews } from "../hooks";
 import { useIsMobile } from "../lib/breakpoints";
 import {
   COLOR_FAMILIES,
@@ -37,6 +39,7 @@ import {
 } from "../lib/colorFamily";
 import { ColorSwatch } from "./ColorSwatch";
 import { PillPicker } from "./PillPicker";
+import { SavedViewMenu } from "./SavedViewMenu";
 import { spoolHexes } from "./spoolLabel";
 
 type SpoolStockLevel = "all" | "low" | "full";
@@ -346,6 +349,16 @@ export function SpoolToolbar(props: Props) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [opened, { open, close }] = useDisclosure(false);
+  const savedViews = useSpoolSavedViews();
+
+  const currentState = spoolSavedViewState(filters, sort, groupBy);
+
+  const applySavedView = (state: SpoolSavedViewState) => {
+    const applied = applySpoolSavedViewState(state);
+    onFiltersChange({ ...applied.filters, search: filters.search });
+    onSortChange(applied.sort);
+    onGroupByChange(applied.groupBy);
+  };
 
   const facetCount =
     filters.materials.length +
@@ -381,6 +394,18 @@ export function SpoolToolbar(props: Props) {
           }
           style={{ flex: 1 }}
         />
+        {savedViews.ready && (
+          <SavedViewMenu
+            views={savedViews.views}
+            currentState={currentState}
+            busy={savedViews.busy}
+            onApply={(view) => applySavedView(view.state)}
+            onSave={(name) => savedViews.save(name, currentState)}
+            onUpdate={(id, name) => savedViews.update(id, name, currentState)}
+            onRename={savedViews.rename}
+            onDelete={savedViews.remove}
+          />
+        )}
         {isMobile ? (
           <Button
             variant={facetCount > 0 ? "filled" : "default"}
@@ -700,4 +725,61 @@ export function getSpoolGroupLabel(
 ): string {
   if (groupBy === "color_family") return t(`color_family.${key}`);
   return key;
+}
+
+/**
+ * Snapshot of the toolbar state stored in a saved view. The search text, `variantIds` (a
+ * drill-in from the filaments page) and the view are intentionally
+ * not part of a saved view.
+ */
+export function spoolSavedViewState(
+  filters: SpoolFilters,
+  sort: SpoolSort,
+  groupBy: SpoolGroupBy,
+): SpoolSavedViewState {
+  return {
+    materials: filters.materials,
+    products: filters.products,
+    color_families: filters.colorFamilies,
+    stock: filters.stock,
+    ams_only: filters.amsOnly,
+    no_remain: filters.noRemain,
+    sort: { field: sort.field, direction: sort.direction },
+    group_by: groupBy,
+  };
+}
+
+/**
+ * Convert a stored saved view back to toolbar state. Values that no longer
+ * exist (removed sort field, renamed group, unknown color family) fall
+ * back to defaults instead of failing.
+ */
+export function applySpoolSavedViewState(state: SpoolSavedViewState): {
+  filters: SpoolFilters;
+  sort: SpoolSort;
+  groupBy: SpoolGroupBy;
+} {
+  return {
+    filters: {
+      search: "",
+      materials: [...state.materials],
+      products: [...state.products],
+      colorFamilies: state.color_families.filter((c): c is ColorFamily =>
+        COLOR_FAMILIES.includes(c as ColorFamily),
+      ),
+      variantIds: [],
+      stock: STOCK_LEVELS.includes(state.stock) ? state.stock : "all",
+      amsOnly: state.ams_only,
+      noRemain: state.no_remain,
+    },
+    sort: SORT_FIELDS.includes(state.sort.field as SpoolSortField)
+      ? {
+          field: state.sort.field as SpoolSortField,
+          direction: state.sort.direction === "desc" ? "desc" : "asc",
+        }
+      : DEFAULT_SORT,
+    groupBy: SPOOL_GROUP_VALUES.includes(state.group_by as SpoolGroupBy)
+      ? (state.group_by as SpoolGroupBy)
+      : DEFAULT_GROUP_BY,
+  };
 }
