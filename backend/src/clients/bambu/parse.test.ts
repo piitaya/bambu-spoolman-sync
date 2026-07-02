@@ -68,9 +68,7 @@ describe("parseAmsReport", () => {
   });
 
   it("returns [] when the ams array is empty", () => {
-    expect(
-      parseAmsReport("AC12", { print: { ams: { ams: [] } } }),
-    ).toEqual([]);
+    expect(parseAmsReport("AC12", { print: { ams: { ams: [] } } })).toEqual([]);
   });
 
   it("handles multiple AMS units", () => {

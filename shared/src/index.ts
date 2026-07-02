@@ -27,18 +27,11 @@ export interface SpoolReading {
 
 /** Match status for an AMS slot. Includes `empty` for slots without a spool. */
 export type SlotMatchType =
-  | "known"
-  | "unknown"
-  | "third_party"
-  | "unidentified"
-  | "empty";
+  "known" | "unknown" | "third_party" | "unidentified" | "empty";
 
 /** Match status for a stored spool. A stored spool always has a tag, so `empty` is not applicable. */
 export type SpoolMatchType =
-  | "known"
-  | "unknown"
-  | "third_party"
-  | "unidentified";
+  "known" | "unknown" | "third_party" | "unidentified";
 
 export interface CatalogEntry {
   id: string;
@@ -100,11 +93,7 @@ export interface Spool {
  *   - `adjust`     — user edited the spool manually in the UI
  */
 export type SpoolHistoryEventType =
-  | "ams_load"
-  | "ams_unload"
-  | "ams_update"
-  | "scan"
-  | "adjust";
+  "ams_load" | "ams_unload" | "ams_update" | "scan" | "adjust";
 
 export interface SpoolHistoryEvent {
   id: number;
@@ -147,10 +136,7 @@ export interface Config {
 // ---------------------------------------------------------------------------
 
 export type PrinterErrorCode =
-  | "unauthorized"
-  | "no_response"
-  | "unreachable"
-  | "other";
+  "unauthorized" | "no_response" | "unreachable" | "other";
 
 export interface PrinterStatus {
   lastError: string | null;

@@ -6,7 +6,7 @@ import {
   Stack,
   Text,
   Title,
-  useMantineColorScheme
+  useMantineColorScheme,
 } from "@mantine/core";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,7 +16,7 @@ import {
   DEFAULT_LANGUAGE,
   LANGUAGES,
   persistLanguage,
-  type Language
+  type Language,
 } from "../i18n";
 
 export default function SettingsPage() {
@@ -33,9 +33,9 @@ export default function SettingsPage() {
     () =>
       Object.entries(LANGUAGES).map(([value, info]) => ({
         value,
-        label: info.label
+        label: info.label,
       })),
-    []
+    [],
   );
 
   const onLanguageChange = (value: string | null) => {
@@ -60,7 +60,9 @@ export default function SettingsPage() {
           <Title order={4}>{t("settings.appearance_card.title")}</Title>
           <Select
             label={t("settings.appearance_card.language")}
-            value={i18n.language in LANGUAGES ? i18n.language : DEFAULT_LANGUAGE}
+            value={
+              i18n.language in LANGUAGES ? i18n.language : DEFAULT_LANGUAGE
+            }
             onChange={onLanguageChange}
             data={languageOptions}
             allowDeselect={false}
@@ -70,9 +72,18 @@ export default function SettingsPage() {
             value={colorScheme}
             onChange={onThemeChange}
             data={[
-              { value: "auto", label: t("settings.appearance_card.theme_auto") },
-              { value: "light", label: t("settings.appearance_card.theme_light") },
-              { value: "dark", label: t("settings.appearance_card.theme_dark") }
+              {
+                value: "auto",
+                label: t("settings.appearance_card.theme_auto"),
+              },
+              {
+                value: "light",
+                label: t("settings.appearance_card.theme_light"),
+              },
+              {
+                value: "dark",
+                label: t("settings.appearance_card.theme_dark"),
+              },
             ]}
             allowDeselect={false}
           />
@@ -87,7 +98,7 @@ export default function SettingsPage() {
             <br />
             {t("settings.mapping_card.last_fetched", {
               when: fetchedAt,
-              count: catalog?.count ?? 0
+              count: catalog?.count ?? 0,
             })}
           </Text>
           <Group>

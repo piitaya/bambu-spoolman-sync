@@ -6,7 +6,8 @@ export function spoolHexes(spool: {
   color_hex?: string | null;
   color_hexes?: string[] | null;
 }): readonly string[] {
-  if (spool.color_hexes && spool.color_hexes.length > 0) return spool.color_hexes;
+  if (spool.color_hexes && spool.color_hexes.length > 0)
+    return spool.color_hexes;
   if (spool.color_hex) return [spool.color_hex];
   return [];
 }
@@ -37,7 +38,8 @@ export function spoolLabels(spool: SpoolLike): SpoolLabels {
 
   const primary = color ?? variant ?? product ?? material ?? tag ?? "";
   const isCode = !color && (!!variant || (!product && !material && !!tag));
-  const secondary = [product, material].find((c) => c != null && c !== primary) ?? null;
+  const secondary =
+    [product, material].find((c) => c != null && c !== primary) ?? null;
 
   return { primary, primaryStyle: isCode ? "code" : "text", secondary };
 }

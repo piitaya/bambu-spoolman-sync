@@ -10,7 +10,10 @@ export function shade(hex: string, amt: number): string {
   const clean = hex.replace(/^#/, "");
   const full =
     clean.length === 3
-      ? clean.split("").map((c) => c + c).join("")
+      ? clean
+          .split("")
+          .map((c) => c + c)
+          .join("")
       : clean.padEnd(6, "0").slice(0, 6);
   const n = parseInt(full, 16);
   let r = (n >> 16) & 255;
@@ -36,7 +39,10 @@ export function shade(hex: string, amt: number): string {
 
 // Bambu reports "00000000" (all zeros incl. alpha) when no color is known —
 // any other value, including "000000FF" (opaque black), is a real colour.
-export function normalizeHex(hex: string | null | undefined, fallback = "#888888"): string {
+export function normalizeHex(
+  hex: string | null | undefined,
+  fallback = "#888888",
+): string {
   if (!hex || hex === "00000000") return fallback;
   const clean = hex.replace(/^#/, "").slice(0, 6);
   if (clean.length < 3) return fallback;

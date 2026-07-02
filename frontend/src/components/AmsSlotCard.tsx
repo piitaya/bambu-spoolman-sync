@@ -1,11 +1,4 @@
-import {
-  Badge,
-  Card,
-  Group,
-  Progress,
-  Stack,
-  Text
-} from "@mantine/core";
+import { Badge, Card, Group, Progress, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import { AmsSlotDetailModal } from "./AmsSlotDetailModal";
@@ -22,7 +15,7 @@ export function amsSlotKey(s: AmsSlot): string {
 
 function SlotFill({
   totalGrams,
-  remainPct
+  remainPct,
 }: {
   totalGrams: number | null;
   remainPct: number | null;

@@ -15,7 +15,14 @@ import {
 } from "./schemas.js";
 import type { SpoolService } from "../services/spool.service.js";
 import type { SpoolHistoryService } from "../services/spool-history.service.js";
-import { ErrorCode, ErrorResponse, LocalSpoolResponse, conflict, errorBody, notFound } from "./schemas.js";
+import {
+  ErrorCode,
+  ErrorResponse,
+  LocalSpoolResponse,
+  conflict,
+  errorBody,
+  notFound,
+} from "./schemas.js";
 
 export interface SpoolRouteDeps {
   spoolService: SpoolService;
@@ -25,92 +32,112 @@ export interface SpoolRouteDeps {
 const DEFAULT_HISTORY_LIMIT = 1000;
 const DEFAULT_HISTORY_WINDOW_DAYS = 30;
 
-export const spoolRoutes: FastifyPluginAsync<SpoolRouteDeps> = async (app, { spoolService, spoolHistoryService }) => {
-  app.get("/api/spools", {
-    schema: {
-      operationId: "listSpools",
-      tags: ["Spools"],
-      description: "List tracked spools.",
-      response: { 200: Type.Array(LocalSpoolResponse) },
+export const spoolRoutes: FastifyPluginAsync<SpoolRouteDeps> = async (
+  app,
+  { spoolService, spoolHistoryService },
+) => {
+  app.get(
+    "/api/spools",
+    {
+      schema: {
+        operationId: "listSpools",
+        tags: ["Spools"],
+        description: "List tracked spools.",
+        response: { 200: Type.Array(LocalSpoolResponse) },
+      },
     },
-  }, async () => {
-    return spoolService.list();
-  });
+    async () => {
+      return spoolService.list();
+    },
+  );
 
-  app.get<{ Params: { tagId: string } }>("/api/spools/:tagId", {
-    schema: {
-      operationId: "getSpool",
-      tags: ["Spools"],
-      description: "Fetch a spool by tag id.",
-      params: Type.Object({ tagId: Type.String({ minLength: 1 }) }),
-      response: { 200: LocalSpoolResponse, 404: ErrorResponse },
+  app.get<{ Params: { tagId: string } }>(
+    "/api/spools/:tagId",
+    {
+      schema: {
+        operationId: "getSpool",
+        tags: ["Spools"],
+        description: "Fetch a spool by tag id.",
+        params: Type.Object({ tagId: Type.String({ minLength: 1 }) }),
+        response: { 200: LocalSpoolResponse, 404: ErrorResponse },
+      },
     },
-  }, async (req, reply) => {
-    const spool = spoolService.findByTagId(req.params.tagId);
-    if (!spool) {
-      return notFound(reply, "Spool not found.");
-    }
-    return spool;
-  });
+    async (req, reply) => {
+      const spool = spoolService.findByTagId(req.params.tagId);
+      if (!spool) {
+        return notFound(reply, "Spool not found.");
+      }
+      return spool;
+    },
+  );
 
   const ScanResponse = Type.Object({
     spool: LocalSpoolResponse,
     created: Type.Boolean(),
   });
 
-  app.post("/api/spools/scan", {
-    schema: {
-      operationId: "scanSpool",
-      tags: ["Spools"],
-      description: "Add or update a spool from a scanned NFC tag. 201 on create, 200 on update.",
-      body: SpoolScanSchema,
-      response: { 200: ScanResponse, 201: ScanResponse },
-    },
-  }, async (req, reply) => {
-    const body = req.body as SpoolScan;
-    const scan: SpoolReading = {
-      tag_id: body.uid,
-      variant_id: body.variant_id,
-      material: body.material,
-      product: body.product,
-      color_hex: body.color_hex,
-      color_hexes: body.color_hexes ?? null,
-      weight: body.weight,
-      temp_min: body.temp_min,
-      temp_max: body.temp_max,
-      remain: body.remain ?? null,
-    };
-    const result = spoolService.upsert(scan, { source: "scan" })!;
-    if (result.created) reply.code(201);
-    return result;
-  });
-
-  app.patch<{ Params: { tagId: string } }>("/api/spools/:tagId", {
-    schema: {
-      operationId: "patchSpool",
-      tags: ["Spools"],
-      description: "Update spool fields. 409 when remain is AMS-managed.",
-      params: Type.Object({ tagId: Type.String({ minLength: 1 }) }),
-      body: SpoolPatchSchema,
-      response: {
-        200: LocalSpoolResponse,
-        404: ErrorResponse,
-        409: ErrorResponse,
+  app.post(
+    "/api/spools/scan",
+    {
+      schema: {
+        operationId: "scanSpool",
+        tags: ["Spools"],
+        description:
+          "Add or update a spool from a scanned NFC tag. 201 on create, 200 on update.",
+        body: SpoolScanSchema,
+        response: { 200: ScanResponse, 201: ScanResponse },
       },
     },
-  }, async (req, reply) => {
-    const body = req.body as SpoolPatch;
-    const result = spoolService.patch(req.params.tagId, body);
-    if (result.ok) return result.spool;
-    if (result.reason === "ams_managed") {
-      return conflict(
-        reply,
-        "Unload the spool from the AMS first.",
-        ErrorCode.AmsManagedRemain,
-      );
-    }
-    return notFound(reply, "Spool not found.");
-  });
+    async (req, reply) => {
+      const body = req.body as SpoolScan;
+      const scan: SpoolReading = {
+        tag_id: body.uid,
+        variant_id: body.variant_id,
+        material: body.material,
+        product: body.product,
+        color_hex: body.color_hex,
+        color_hexes: body.color_hexes ?? null,
+        weight: body.weight,
+        temp_min: body.temp_min,
+        temp_max: body.temp_max,
+        remain: body.remain ?? null,
+      };
+      const result = spoolService.upsert(scan, { source: "scan" })!;
+      if (result.created) reply.code(201);
+      return result;
+    },
+  );
+
+  app.patch<{ Params: { tagId: string } }>(
+    "/api/spools/:tagId",
+    {
+      schema: {
+        operationId: "patchSpool",
+        tags: ["Spools"],
+        description: "Update spool fields. 409 when remain is AMS-managed.",
+        params: Type.Object({ tagId: Type.String({ minLength: 1 }) }),
+        body: SpoolPatchSchema,
+        response: {
+          200: LocalSpoolResponse,
+          404: ErrorResponse,
+          409: ErrorResponse,
+        },
+      },
+    },
+    async (req, reply) => {
+      const body = req.body as SpoolPatch;
+      const result = spoolService.patch(req.params.tagId, body);
+      if (result.ok) return result.spool;
+      if (result.reason === "ams_managed") {
+        return conflict(
+          reply,
+          "Unload the spool from the AMS first.",
+          ErrorCode.AmsManagedRemain,
+        );
+      }
+      return notFound(reply, "Spool not found.");
+    },
+  );
 
   app.get<{ Params: { tagId: string }; Querystring: SpoolHistoryQuery }>(
     "/api/spools/:tagId/history",
@@ -118,7 +145,8 @@ export const spoolRoutes: FastifyPluginAsync<SpoolRouteDeps> = async (app, { spo
       schema: {
         operationId: "getSpoolHistory",
         tags: ["Spools"],
-        description: "Event history for a spool. Newest first, cursor-paginated via `before`.",
+        description:
+          "Event history for a spool. Newest first, cursor-paginated via `before`.",
         params: Type.Object({ tagId: Type.String({ minLength: 1 }) }),
         querystring: SpoolHistoryQuerySchema,
         response: { 200: SpoolHistoryResponseSchema, 404: ErrorResponse },
@@ -133,7 +161,9 @@ export const spoolRoutes: FastifyPluginAsync<SpoolRouteDeps> = async (app, { spo
       const now = new Date();
       const fromDate =
         req.query.from ??
-        new Date(now.getTime() - DEFAULT_HISTORY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+        new Date(
+          now.getTime() - DEFAULT_HISTORY_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+        ).toISOString();
       const toDate = req.query.to ?? now.toISOString();
       const limit = req.query.limit ?? DEFAULT_HISTORY_LIMIT;
 
@@ -233,29 +263,33 @@ export const spoolRoutes: FastifyPluginAsync<SpoolRouteDeps> = async (app, { spo
     },
   );
 
-  app.delete<{ Params: { tagId: string } }>("/api/spools/:tagId", {
-    schema: {
-      operationId: "deleteSpool",
-      tags: ["Spools"],
-      description: "Delete a spool. 409 when loaded in an AMS.",
-      params: Type.Object({ tagId: Type.String({ minLength: 1 }) }),
-      response: { 204: Type.Null(), 404: ErrorResponse, 409: ErrorResponse },
+  app.delete<{ Params: { tagId: string } }>(
+    "/api/spools/:tagId",
+    {
+      schema: {
+        operationId: "deleteSpool",
+        tags: ["Spools"],
+        description: "Delete a spool. 409 when loaded in an AMS.",
+        params: Type.Object({ tagId: Type.String({ minLength: 1 }) }),
+        response: { 204: Type.Null(), 404: ErrorResponse, 409: ErrorResponse },
+      },
     },
-  }, async (req, reply) => {
-    const { tagId } = req.params;
-    const result = spoolService.delete(tagId);
-    if (!result.ok) {
-      if (result.reason === "ams_loaded") {
-        return conflict(
-          reply,
-          "Unload the spool from the AMS first.",
-          ErrorCode.AmsLoaded,
-        );
+    async (req, reply) => {
+      const { tagId } = req.params;
+      const result = spoolService.delete(tagId);
+      if (!result.ok) {
+        if (result.reason === "ams_loaded") {
+          return conflict(
+            reply,
+            "Unload the spool from the AMS first.",
+            ErrorCode.AmsLoaded,
+          );
+        }
+        return notFound(reply, "Spool not found.");
       }
-      return notFound(reply, "Spool not found.");
-    }
 
-    reply.code(204);
-    return;
-  });
+      reply.code(204);
+      return;
+    },
+  );
 };

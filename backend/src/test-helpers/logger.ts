@@ -2,7 +2,8 @@ import { vi } from "vitest";
 import type { FastifyBaseLogger } from "fastify";
 
 export function createTestLogger(): FastifyBaseLogger {
-  const logger: Record<string, any> = {
+  const child = vi.fn();
+  const logger = {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
@@ -11,8 +12,8 @@ export function createTestLogger(): FastifyBaseLogger {
     fatal: vi.fn(),
     silent: vi.fn(),
     level: "silent",
-    child: vi.fn(),
+    child,
   };
-  logger.child.mockReturnValue(logger);
-  return logger as FastifyBaseLogger;
+  child.mockReturnValue(logger);
+  return logger as unknown as FastifyBaseLogger;
 }

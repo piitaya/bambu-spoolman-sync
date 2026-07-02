@@ -19,7 +19,11 @@ interface PrinterFormModalProps {
   editing: PrinterConfig | null;
 }
 
-export function PrinterFormModal({ opened, onClose, editing }: PrinterFormModalProps) {
+export function PrinterFormModal({
+  opened,
+  onClose,
+  editing,
+}: PrinterFormModalProps) {
   const { t } = useTranslation();
   const create = useCreatePrinter();
   const update = useUpdatePrinter();
@@ -48,7 +52,10 @@ export function PrinterFormModal({ opened, onClose, editing }: PrinterFormModalP
   const submit = async (values: PrinterConfig) => {
     try {
       if (editing) {
-        await update.mutateAsync({ serial: editing.serial, patch: { ...values } });
+        await update.mutateAsync({
+          serial: editing.serial,
+          patch: { ...values },
+        });
       } else {
         await create.mutateAsync(values);
       }

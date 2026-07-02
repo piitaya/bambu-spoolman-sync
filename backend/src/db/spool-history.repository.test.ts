@@ -1,6 +1,9 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { createTestDb } from "../test-helpers/db.js";
-import { createSpoolRepository, type SpoolRepository } from "./spool.repository.js";
+import {
+  createSpoolRepository,
+  type SpoolRepository,
+} from "./spool.repository.js";
 import {
   createSpoolHistoryRepository,
   type SpoolHistoryRepository,

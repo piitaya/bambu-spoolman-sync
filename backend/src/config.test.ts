@@ -10,14 +10,14 @@ describe("ConfigSchema", () => {
     const coerced = Value.Default(ConfigSchema, {});
     Value.Clean(ConfigSchema, coerced);
     expect(Value.Check(ConfigSchema, coerced)).toBe(true);
-    const c = coerced as any;
+    const c = coerced as { printers?: unknown };
     expect(c.printers).toEqual([]);
   });
 
   it("rejects a printer missing required fields", () => {
-    expect(
-      Value.Check(ConfigSchema, { printers: [{ name: "x" }] }),
-    ).toBe(false);
+    expect(Value.Check(ConfigSchema, { printers: [{ name: "x" }] })).toBe(
+      false,
+    );
   });
 
   it("rejects a printer with an empty serial", () => {

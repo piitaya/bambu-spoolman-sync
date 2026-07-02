@@ -23,9 +23,12 @@ export function createConfigStore(
     async apply(next) {
       const validated = await saveConfig(configFilePath, next);
       config = validated;
-      log.info({
-        printerCount: config.printers.length,
-      }, "Config saved");
+      log.info(
+        {
+          printerCount: config.printers.length,
+        },
+        "Config saved",
+      );
       bus.emit("config:changed", config);
     },
   };

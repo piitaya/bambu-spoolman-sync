@@ -13,14 +13,14 @@ move it between slots or printers.
 
 ## Features
 
-* Live dashboard of every AMS slot: color, material, remaining
+- Live dashboard of every AMS slot: color, material, remaining
   weight, match status.
-* Inventory of every spool the app has seen, with first-seen and
+- Inventory of every spool the app has seen, with first-seen and
   last-used timestamps.
-* Timeline of each spool's loads, unloads, AMS updates, scans, and
+- Timeline of each spool's loads, unloads, AMS updates, scans, and
   manual adjustments.
-* Manual remaining-weight adjustment when the AMS isn't reporting one.
-* English and French.
+- Manual remaining-weight adjustment when the AMS isn't reporting one.
+- English and French.
 
 ## Why RFID
 
@@ -73,12 +73,12 @@ services:
 
 #### Image tags
 
-| Tag            | Meaning                                                      |
-| -------------- | ------------------------------------------------------------ |
-| `latest`       | Most recent stable release (nothing yet, still in preview)   |
-| `beta`         | Most recent beta release (recommended for now)               |
-| `edge`         | Latest commit on `main`, unstable                            |
-| `0.1.0-beta.2` | Pin to an exact version                                      |
+| Tag            | Meaning                                                    |
+| -------------- | ---------------------------------------------------------- |
+| `latest`       | Most recent stable release (nothing yet, still in preview) |
+| `beta`         | Most recent beta release (recommended for now)             |
+| `edge`         | Latest commit on `main`, unstable                          |
+| `0.1.0-beta.2` | Pin to an exact version                                    |
 
 ### From source
 
@@ -95,39 +95,39 @@ For production: `npm run build && npm start`.
 
 1. Go to **Settings → Printers** and add your printer: name, IP,
    serial, access code. The serial and access code are on the
-   printer's touchscreen, under *Settings → Device* and
-   *Settings → Network → LAN-only mode*.
+   printer's touchscreen, under _Settings → Device_ and
+   _Settings → Network → LAN-only mode_.
 2. Load a spool in the AMS. Pandaroo picks up the RFID reading and
    starts tracking it.
 
 ## Privacy and security
 
-* Outbound connections: your printers on the LAN, and GitHub (once
+- Outbound connections: your printers on the LAN, and GitHub (once
   a day) to refresh the filament catalog. Nothing else.
-* No accounts, no analytics, no telemetry.
-* Printer access codes are stored in `config.json` inside `DATA_DIR`.
-* There's no authentication and no rate limiting. Run Pandaroo on
+- No accounts, no analytics, no telemetry.
+- Printer access codes are stored in `config.json` inside `DATA_DIR`.
+- There's no authentication and no rate limiting. Run Pandaroo on
   your LAN. For remote access, put it behind an authenticated
   reverse proxy.
 
 ## Under the hood
 
-* **Backend**: Fastify + TypeScript. One MQTT client per printer
+- **Backend**: Fastify + TypeScript. One MQTT client per printer
   (port 8883, TLS, LAN-only mode), streaming AMS state as it changes.
   SQLite via Drizzle and better-sqlite3.
-* **Matching**: the RFID variant id is looked up in the cached
+- **Matching**: the RFID variant id is looked up in the cached
   [`bambu-filaments`](https://github.com/piitaya/bambu-filaments)
   catalog. No fuzzy name matching, no hex comparisons.
-* **Storage**: a `spools` table (one row per RFID tag), plus
+- **Storage**: a `spools` table (one row per RFID tag), plus
   `spool_history`, an append-only event log with types `ams_load`,
   `ams_unload`, `ams_update`, `scan`, and `adjust`. Migrations live
   in `backend/drizzle/`.
-* **Real-time**: the backend publishes Server-Sent Events on
+- **Real-time**: the backend publishes Server-Sent Events on
   `/api/events`. The frontend subscribes on mount and invalidates
   the matching TanStack Query caches.
-* **Frontend**: React 19 + Vite + [Mantine](https://mantine.dev) 7,
+- **Frontend**: React 19 + Vite + [Mantine](https://mantine.dev) 7,
   TanStack Query for server state, react-i18next for translations.
-* **API docs**: Swagger UI at `/docs`. Includes
+- **API docs**: Swagger UI at `/docs`. Includes
   `POST /api/spools/scan` if you want to register spools from an
   external NFC reader.
 
@@ -157,8 +157,8 @@ services:
 
 Common failures:
 
-* `errorCode="unauthorized"`: wrong access code.
-* `Printer not responding`: wrong IP, printer off, or port 8883
+- `errorCode="unauthorized"`: wrong access code.
+- `Printer not responding`: wrong IP, printer off, or port 8883
   blocked by a firewall.
 
 ## License

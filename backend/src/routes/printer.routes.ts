@@ -12,100 +12,113 @@ export interface PrinterRouteDeps {
 const PrinterUpdateSchema = Type.Partial(PrinterSchema);
 const SerialParams = Type.Object({ serial: Type.String() });
 
-export const printerRoutes: FastifyPluginAsync<PrinterRouteDeps> = async (app, { configStore }) => {
-  app.get("/api/printers", {
-    schema: {
-      operationId: "listPrinters",
-      tags: ["Printers"],
-      description: "List configured printers.",
-      response: { 200: Type.Array(PrinterSchema) },
+export const printerRoutes: FastifyPluginAsync<PrinterRouteDeps> = async (
+  app,
+  { configStore },
+) => {
+  app.get(
+    "/api/printers",
+    {
+      schema: {
+        operationId: "listPrinters",
+        tags: ["Printers"],
+        description: "List configured printers.",
+        response: { 200: Type.Array(PrinterSchema) },
+      },
     },
-  }, async () => configStore.current.printers);
+    async () => configStore.current.printers,
+  );
 
-  app.post("/api/printers", {
-    schema: {
-      operationId: "createPrinter",
-      tags: ["Printers"],
-      description: "Add a printer.",
-      body: PrinterSchema,
-      response: { 200: PrinterSchema, 409: ErrorResponse },
+  app.post(
+    "/api/printers",
+    {
+      schema: {
+        operationId: "createPrinter",
+        tags: ["Printers"],
+        description: "Add a printer.",
+        body: PrinterSchema,
+        response: { 200: PrinterSchema, 409: ErrorResponse },
+      },
     },
-  }, async (req, reply) => {
-    const printer = req.body as PrinterConfig;
-    const config = configStore.current;
-    if (config.printers.some((p) => p.serial === printer.serial)) {
-      reply.code(409);
-      return errorBody(
-        "Printer serial already in use.",
-        ErrorCode.Conflict,
+    async (req, reply) => {
+      const printer = req.body as PrinterConfig;
+      const config = configStore.current;
+      if (config.printers.some((p) => p.serial === printer.serial)) {
+        reply.code(409);
+        return errorBody("Printer serial already in use.", ErrorCode.Conflict);
+      }
+      await configStore.apply({
+        ...config,
+        printers: [...config.printers, printer],
+      });
+      return printer;
+    },
+  );
+
+  app.patch<{ Params: { serial: string } }>(
+    "/api/printers/:serial",
+    {
+      schema: {
+        operationId: "updatePrinter",
+        tags: ["Printers"],
+        description: "Update a printer.",
+        params: SerialParams,
+        body: PrinterUpdateSchema,
+        response: {
+          200: PrinterSchema,
+          404: ErrorResponse,
+          409: ErrorResponse,
+        },
+      },
+    },
+    async (req, reply) => {
+      const body = req.body as Partial<PrinterConfig>;
+      const config = configStore.current;
+      const idx = config.printers.findIndex(
+        (p) => p.serial === req.params.serial,
       );
-    }
-    await configStore.apply({
-      ...config,
-      printers: [...config.printers, printer],
-    });
-    return printer;
-  });
-
-  app.patch<{ Params: { serial: string } }>("/api/printers/:serial", {
-    schema: {
-      operationId: "updatePrinter",
-      tags: ["Printers"],
-      description: "Update a printer.",
-      params: SerialParams,
-      body: PrinterUpdateSchema,
-      response: { 200: PrinterSchema, 404: ErrorResponse, 409: ErrorResponse },
+      if (idx === -1) {
+        reply.code(404);
+        return errorBody("Printer not found.", ErrorCode.NotFound);
+      }
+      if (
+        body.serial != null &&
+        body.serial !== req.params.serial &&
+        config.printers.some((p, i) => i !== idx && p.serial === body.serial)
+      ) {
+        reply.code(409);
+        return errorBody("Printer serial already in use.", ErrorCode.Conflict);
+      }
+      const updated = { ...config.printers[idx], ...body };
+      const printers = [...config.printers];
+      printers[idx] = updated;
+      await configStore.apply({ ...config, printers });
+      return updated;
     },
-  }, async (req, reply) => {
-    const body = req.body as Partial<PrinterConfig>;
-    const config = configStore.current;
-    const idx = config.printers.findIndex(
-      (p) => p.serial === req.params.serial,
-    );
-    if (idx === -1) {
-      reply.code(404);
-      return errorBody("Printer not found.", ErrorCode.NotFound);
-    }
-    if (
-      body.serial != null &&
-      body.serial !== req.params.serial &&
-      config.printers.some(
-        (p, i) => i !== idx && p.serial === body.serial,
-      )
-    ) {
-      reply.code(409);
-      return errorBody(
-        "Printer serial already in use.",
-        ErrorCode.Conflict,
-      );
-    }
-    const updated = { ...config.printers[idx], ...body };
-    const printers = [...config.printers];
-    printers[idx] = updated;
-    await configStore.apply({ ...config, printers });
-    return updated;
-  });
+  );
 
-  app.delete<{ Params: { serial: string } }>("/api/printers/:serial", {
-    schema: {
-      operationId: "deletePrinter",
-      tags: ["Printers"],
-      description: "Remove a printer.",
-      params: SerialParams,
-      response: { 200: OkResponse, 404: ErrorResponse },
+  app.delete<{ Params: { serial: string } }>(
+    "/api/printers/:serial",
+    {
+      schema: {
+        operationId: "deletePrinter",
+        tags: ["Printers"],
+        description: "Remove a printer.",
+        params: SerialParams,
+        response: { 200: OkResponse, 404: ErrorResponse },
+      },
     },
-  }, async (req, reply) => {
-    const config = configStore.current;
-    if (!config.printers.some((p) => p.serial === req.params.serial)) {
-      reply.code(404);
-      return errorBody("Printer not found.", ErrorCode.NotFound);
-    }
-    await configStore.apply({
-      ...config,
-      printers: config.printers.filter(
-        (p) => p.serial !== req.params.serial,
-      ),
-    });
-    return { ok: true };
-  });
+    async (req, reply) => {
+      const config = configStore.current;
+      if (!config.printers.some((p) => p.serial === req.params.serial)) {
+        reply.code(404);
+        return errorBody("Printer not found.", ErrorCode.NotFound);
+      }
+      await configStore.apply({
+        ...config,
+        printers: config.printers.filter((p) => p.serial !== req.params.serial),
+      });
+      return { ok: true };
+    },
+  );
 };

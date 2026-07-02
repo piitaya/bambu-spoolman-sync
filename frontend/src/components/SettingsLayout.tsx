@@ -4,12 +4,12 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const TAB_BY_PATH: Record<string, string> = {
   "/settings": "general",
-  "/settings/printers": "printers"
+  "/settings/printers": "printers",
 };
 
 const PATH_BY_TAB: Record<string, string> = {
   general: "/settings",
-  printers: "/settings/printers"
+  printers: "/settings/printers",
 };
 
 export default function SettingsLayout() {

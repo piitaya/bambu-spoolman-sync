@@ -5,7 +5,7 @@ import fr from "./fr.json";
 
 export const LANGUAGES = {
   en: { label: "English" },
-  fr: { label: "Français" }
+  fr: { label: "Français" },
 } as const;
 
 export type Language = keyof typeof LANGUAGES;
@@ -32,14 +32,14 @@ export function persistLanguage(lang: Language): void {
 i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
-    fr: { translation: fr }
+    fr: { translation: fr },
   },
   lng: detectInitialLanguage(),
   fallbackLng: DEFAULT_LANGUAGE,
   interpolation: {
-    escapeValue: false // React already escapes
+    escapeValue: false, // React already escapes
   },
-  returnNull: false
+  returnNull: false,
 });
 
 export default i18n;

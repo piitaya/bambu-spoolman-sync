@@ -1,9 +1,5 @@
 import { ActionIcon, Badge, Menu, Text, ThemeIcon } from "@mantine/core";
-import {
-  IconDots,
-  IconPencil,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconDots, IconPencil, IconTrash } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -30,10 +26,7 @@ export function Timeline({ model }: TimelineProps) {
   const [deleting, setDeleting] = useState<UsagePin | null>(null);
 
   const rows = useMemo(
-    () =>
-      [...model.pins].sort(
-        (a, b) => b.t - a.t || b.event.id - a.event.id,
-      ),
+    () => [...model.pins].sort((a, b) => b.t - a.t || b.event.id - a.event.id),
     [model.pins],
   );
 
@@ -184,7 +177,11 @@ function PinIcon({ pin, t }: { pin: UsagePin; t: TFunction }) {
       variant="light"
       color={meta.color}
       className={shared.icon}
-      style={{ "--icon-color": `var(--mantine-color-${meta.color}-filled)` } as React.CSSProperties}
+      style={
+        {
+          "--icon-color": `var(--mantine-color-${meta.color}-filled)`,
+        } as React.CSSProperties
+      }
     >
       <Icon size={15} />
     </ThemeIcon>

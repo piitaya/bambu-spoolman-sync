@@ -34,10 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
             >
               Try again
             </Button>
-            <Button
-              variant="default"
-              onClick={() => window.location.reload()}
-            >
+            <Button variant="default" onClick={() => window.location.reload()}>
               Reload page
             </Button>
           </Button.Group>

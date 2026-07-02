@@ -117,212 +117,224 @@ export default function SpoolDetailPage() {
         </Group>
 
         <Paper p="lg" radius="md" withBorder>
-        <Stack gap="md">
-          <Group
-            gap="lg"
-            wrap="wrap"
-            align="center"
-            style={{ rowGap: "var(--mantine-spacing-md)" }}
-          >
-            <SpoolIllustration
-              hex={heroHex}
-              hexes={spool.color_hexes}
-              remain={spool.remain}
-              size={120}
-            />
-            <Stack
-              gap={6}
-              style={{
-                minWidth: 0,
-                // Desktop: sit beside the illustration and grow.
-                // Mobile: force wrap to own row so the title gets full width.
-                flex: isMobile ? "1 1 100%" : "1 1 220px",
-              }}
+          <Stack gap="md">
+            <Group
+              gap="lg"
+              wrap="wrap"
+              align="center"
+              style={{ rowGap: "var(--mantine-spacing-md)" }}
             >
-              <Group gap="xs" wrap="wrap">
-                <Badge color={status.color} variant="light">
-                  {status.label}
-                </Badge>
-                {spool.material && (
-                  <Badge color="gray" variant="light">
-                    {spool.material}
-                  </Badge>
-                )}
-              </Group>
-              <Title
-                order={2}
-                ff={labels.primaryStyle === "code" ? "monospace" : undefined}
+              <SpoolIllustration
+                hex={heroHex}
+                hexes={spool.color_hexes}
+                remain={spool.remain}
+                size={120}
+              />
+              <Stack
+                gap={6}
                 style={{
-                  overflowWrap:
-                    labels.primaryStyle === "code" ? "anywhere" : "break-word",
+                  minWidth: 0,
+                  // Desktop: sit beside the illustration and grow.
+                  // Mobile: force wrap to own row so the title gets full width.
+                  flex: isMobile ? "1 1 100%" : "1 1 220px",
                 }}
               >
-                {labels.primary}
-              </Title>
-              {labels.secondary && (
-                <Text size="sm" c="dimmed">
-                  {labels.secondary}
-                </Text>
-              )}
-            </Stack>
-          </Group>
-          <HeroRemain
-            spool={spool}
-            totalWeight={totalWeight}
-            onAdjust={() => setAdjustOpen(true)}
-          />
-        </Stack>
-      </Paper>
-
-      <ReportUnknownFilamentAlert source={spool} matchType={spool.match_type} />
-
-      <Card withBorder padding="lg" radius="md">
-        <Stack gap="sm">
-          <DetailRow label={t("slot.fields.current_location")}>
-            {location ? (
-              <Text size="sm" fw={500}>
-                {formatAmsLocation(location, t)}
-              </Text>
-            ) : (
-              <Text size="sm" c="dimmed">
-                {t("spool_detail.location.not_loaded")}
-              </Text>
-            )}
-          </DetailRow>
-          <DetailRow label={t("slot.fields.last_used")}>
-            <Text size="sm">
-              {spool.last_used
-                ? new Date(spool.last_used).toLocaleString()
-                : "—"}
-            </Text>
-          </DetailRow>
-          <DetailRow label={t("slot.fields.nozzle_temp")}>
-            {spool.temp_min != null || spool.temp_max != null ? (
-              <Text size="sm">
-                {spool.temp_min ?? "—"} – {spool.temp_max ?? "—"} °C
-              </Text>
-            ) : (
-              <Text size="sm" c="dimmed">
-                —
-              </Text>
-            )}
-          </DetailRow>
-        </Stack>
-      </Card>
-
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" verticalSpacing="lg">
-        <Card withBorder padding="lg" radius="md">
-          {historyQuery.isLoading ? (
-            <Loader size="sm" />
-          ) : (
-            <SpoolUsageHistory events={historyQuery.data?.events} />
-          )}
-          {historyQuery.data?.has_more && (
-            <Alert variant="light" color="gray" mt="md">
-              {t("spool_detail.usage.has_more")}
-            </Alert>
-          )}
-        </Card>
-
-        <Stack gap="lg">
-        <Card withBorder padding="lg" radius="md">
-          <Stack gap="sm">
-            <Title order={4}>{t("spool_detail.details.title")}</Title>
-          <DetailRow label={t("slot.fields.spool_uid")}>
-            <CopyableMono value={spool.tag_id} />
-          </DetailRow>
-          {spool.variant_id && (
-            <DetailRow label={t("slot.fields.bambu_filament")}>
-              <CopyableMono value={spool.variant_id} />
-            </DetailRow>
-          )}
-          {totalWeight != null && (
-            <DetailRow label={t("slot.fields.total_weight")}>
-              <Text size="sm">{totalWeight} g</Text>
-            </DetailRow>
-          )}
-          {swatches.length > 0 && (
-            <DetailRow
-              label={t(
-                swatches.length > 1
-                  ? "slot.fields.colors_hex"
-                  : "slot.fields.color_hex",
-              )}
-            >
-              <CopyableMono value={swatches.join(", ")} />
-            </DetailRow>
-          )}
-          <DetailRow label={t("slot.fields.first_seen")}>
-            <Text size="sm">{new Date(spool.first_seen).toLocaleString()}</Text>
-          </DetailRow>
-          <DetailRow label={t("slot.fields.last_updated")}>
-            <Text size="sm">
-              {new Date(spool.last_updated).toLocaleString()}
-            </Text>
-          </DetailRow>
-          </Stack>
-        </Card>
-
-        <Card
-          withBorder
-          padding="lg"
-          radius="md"
-          style={{ borderColor: "var(--mantine-color-red-4)" }}
-        >
-          <Stack gap="sm">
-            <Title order={4} c="red">
-              {t("spool_detail.danger_zone.title")}
-            </Title>
-            <Group justify="space-between" align="center" wrap="nowrap" gap="md">
-              <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-                <Text size="sm" fw={500}>
-                  {t("spool_detail.danger_zone.remove_title")}
-                </Text>
-                <Text size="xs" c="dimmed">
-                  {t("spool_detail.danger_zone.remove_hint")}
-                </Text>
-              </Stack>
-              <Tooltip
-                label={t("spool_detail.danger_zone.remove_disabled_hint")}
-                disabled={!location}
-                withArrow
-              >
-                <Button
-                  color="red"
-                  variant="outline"
-                  leftSection={<IconTrash size={16} />}
-                  onClick={() => setConfirmRemove(true)}
-                  disabled={!!location}
+                <Group gap="xs" wrap="wrap">
+                  <Badge color={status.color} variant="light">
+                    {status.label}
+                  </Badge>
+                  {spool.material && (
+                    <Badge color="gray" variant="light">
+                      {spool.material}
+                    </Badge>
+                  )}
+                </Group>
+                <Title
+                  order={2}
+                  ff={labels.primaryStyle === "code" ? "monospace" : undefined}
+                  style={{
+                    overflowWrap:
+                      labels.primaryStyle === "code"
+                        ? "anywhere"
+                        : "break-word",
+                  }}
                 >
-                  {t("common.remove")}
-                </Button>
-              </Tooltip>
+                  {labels.primary}
+                </Title>
+                {labels.secondary && (
+                  <Text size="sm" c="dimmed">
+                    {labels.secondary}
+                  </Text>
+                )}
+              </Stack>
             </Group>
+            <HeroRemain
+              spool={spool}
+              totalWeight={totalWeight}
+              onAdjust={() => setAdjustOpen(true)}
+            />
+          </Stack>
+        </Paper>
+
+        <ReportUnknownFilamentAlert
+          source={spool}
+          matchType={spool.match_type}
+        />
+
+        <Card withBorder padding="lg" radius="md">
+          <Stack gap="sm">
+            <DetailRow label={t("slot.fields.current_location")}>
+              {location ? (
+                <Text size="sm" fw={500}>
+                  {formatAmsLocation(location, t)}
+                </Text>
+              ) : (
+                <Text size="sm" c="dimmed">
+                  {t("spool_detail.location.not_loaded")}
+                </Text>
+              )}
+            </DetailRow>
+            <DetailRow label={t("slot.fields.last_used")}>
+              <Text size="sm">
+                {spool.last_used
+                  ? new Date(spool.last_used).toLocaleString()
+                  : "—"}
+              </Text>
+            </DetailRow>
+            <DetailRow label={t("slot.fields.nozzle_temp")}>
+              {spool.temp_min != null || spool.temp_max != null ? (
+                <Text size="sm">
+                  {spool.temp_min ?? "—"} – {spool.temp_max ?? "—"} °C
+                </Text>
+              ) : (
+                <Text size="sm" c="dimmed">
+                  —
+                </Text>
+              )}
+            </DetailRow>
           </Stack>
         </Card>
-        </Stack>
-      </SimpleGrid>
 
-      <AdjustRemainModal
-        key={spool.tag_id}
-        spool={spool}
-        opened={adjustOpen}
-        onClose={() => setAdjustOpen(false)}
-      />
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" verticalSpacing="lg">
+          <Card withBorder padding="lg" radius="md">
+            {historyQuery.isLoading ? (
+              <Loader size="sm" />
+            ) : (
+              <SpoolUsageHistory events={historyQuery.data?.events} />
+            )}
+            {historyQuery.data?.has_more && (
+              <Alert variant="light" color="gray" mt="md">
+                {t("spool_detail.usage.has_more")}
+              </Alert>
+            )}
+          </Card>
 
-      <ConfirmModal
-        opened={confirmRemove}
-        onClose={() => setConfirmRemove(false)}
-        onConfirm={() => {
-          removeSpool.mutate(spool.tag_id, {
-            onSuccess: () => navigate("/inventory", { replace: true }),
-            onSettled: () => setConfirmRemove(false),
-          });
-        }}
-        title={t("spools.remove_confirm_title")}
-        body={t("spools.remove_confirm_body", { name: labels.primary })}
-        loading={removeSpool.isPending}
-      />
+          <Stack gap="lg">
+            <Card withBorder padding="lg" radius="md">
+              <Stack gap="sm">
+                <Title order={4}>{t("spool_detail.details.title")}</Title>
+                <DetailRow label={t("slot.fields.spool_uid")}>
+                  <CopyableMono value={spool.tag_id} />
+                </DetailRow>
+                {spool.variant_id && (
+                  <DetailRow label={t("slot.fields.bambu_filament")}>
+                    <CopyableMono value={spool.variant_id} />
+                  </DetailRow>
+                )}
+                {totalWeight != null && (
+                  <DetailRow label={t("slot.fields.total_weight")}>
+                    <Text size="sm">{totalWeight} g</Text>
+                  </DetailRow>
+                )}
+                {swatches.length > 0 && (
+                  <DetailRow
+                    label={t(
+                      swatches.length > 1
+                        ? "slot.fields.colors_hex"
+                        : "slot.fields.color_hex",
+                    )}
+                  >
+                    <CopyableMono value={swatches.join(", ")} />
+                  </DetailRow>
+                )}
+                <DetailRow label={t("slot.fields.first_seen")}>
+                  <Text size="sm">
+                    {new Date(spool.first_seen).toLocaleString()}
+                  </Text>
+                </DetailRow>
+                <DetailRow label={t("slot.fields.last_updated")}>
+                  <Text size="sm">
+                    {new Date(spool.last_updated).toLocaleString()}
+                  </Text>
+                </DetailRow>
+              </Stack>
+            </Card>
+
+            <Card
+              withBorder
+              padding="lg"
+              radius="md"
+              style={{ borderColor: "var(--mantine-color-red-4)" }}
+            >
+              <Stack gap="sm">
+                <Title order={4} c="red">
+                  {t("spool_detail.danger_zone.title")}
+                </Title>
+                <Group
+                  justify="space-between"
+                  align="center"
+                  wrap="nowrap"
+                  gap="md"
+                >
+                  <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
+                    <Text size="sm" fw={500}>
+                      {t("spool_detail.danger_zone.remove_title")}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {t("spool_detail.danger_zone.remove_hint")}
+                    </Text>
+                  </Stack>
+                  <Tooltip
+                    label={t("spool_detail.danger_zone.remove_disabled_hint")}
+                    disabled={!location}
+                    withArrow
+                  >
+                    <Button
+                      color="red"
+                      variant="outline"
+                      leftSection={<IconTrash size={16} />}
+                      onClick={() => setConfirmRemove(true)}
+                      disabled={!!location}
+                    >
+                      {t("common.remove")}
+                    </Button>
+                  </Tooltip>
+                </Group>
+              </Stack>
+            </Card>
+          </Stack>
+        </SimpleGrid>
+
+        <AdjustRemainModal
+          key={spool.tag_id}
+          spool={spool}
+          opened={adjustOpen}
+          onClose={() => setAdjustOpen(false)}
+        />
+
+        <ConfirmModal
+          opened={confirmRemove}
+          onClose={() => setConfirmRemove(false)}
+          onConfirm={() => {
+            removeSpool.mutate(spool.tag_id, {
+              onSuccess: () => navigate("/inventory", { replace: true }),
+              onSettled: () => setConfirmRemove(false),
+            });
+          }}
+          title={t("spools.remove_confirm_title")}
+          body={t("spools.remove_confirm_body", { name: labels.primary })}
+          loading={removeSpool.isPending}
+        />
       </Stack>
     </PageShell>
   );
@@ -369,7 +381,11 @@ function HeroRemain({ spool, totalWeight, onAdjust }: HeroRemainProps) {
           </Text>
         )}
       </Group>
-      <Progress value={spool.remain} size="sm" color={spoolFillColor(spool.remain)} />
+      <Progress
+        value={spool.remain}
+        size="sm"
+        color={spoolFillColor(spool.remain)}
+      />
     </Stack>
   );
 }
@@ -403,13 +419,21 @@ function BackLink() {
   );
 }
 
-function DetailRow({ label, children }: { label: string; children: ReactNode }) {
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
   return (
     <Group justify="space-between" gap="md" wrap="nowrap" align="center">
       <Text size="sm" c="dimmed" style={{ flexShrink: 0 }}>
         {label}
       </Text>
-      <div style={{ minWidth: 0, maxWidth: "60%", textAlign: "right" }}>{children}</div>
+      <div style={{ minWidth: 0, maxWidth: "60%", textAlign: "right" }}>
+        {children}
+      </div>
     </Group>
   );
 }

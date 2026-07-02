@@ -90,25 +90,20 @@ export function aggregateBySku(
 type Ownership = "all" | "owned" | "not_owned";
 
 export type FilamentSortField =
-  | "material"
-  | "product"
-  | "color_name"
-  | "owned"
-  | "remain_grams";
+  "material" | "product" | "color_name" | "owned" | "remain_grams";
 
 export interface FilamentSort {
   field: FilamentSortField;
   direction: "asc" | "desc";
 }
 
-export const DEFAULT_SORT: FilamentSort = { field: "product", direction: "asc" };
+export const DEFAULT_SORT: FilamentSort = {
+  field: "product",
+  direction: "asc",
+};
 
 export type FilamentGroupBy =
-  | "none"
-  | "material"
-  | "product"
-  | "color_family"
-  | "owned";
+  "none" | "material" | "product" | "color_family" | "owned";
 export const FILAMENT_GROUP_VALUES: readonly FilamentGroupBy[] = [
   "none",
   "material",
@@ -181,7 +176,11 @@ export function FilamentFilterPanel({
   onGroupByChange,
 }: PanelProps) {
   const { t } = useTranslation();
-  const { materials, products, colorFamilies: availableFamilies } = useMemo(
+  const {
+    materials,
+    products,
+    colorFamilies: availableFamilies,
+  } = useMemo(
     () => deriveOptions(catalog, filters.materials),
     [catalog, filters.materials],
   );
@@ -569,8 +568,10 @@ export function searchParamsToFilamentState(params: URLSearchParams): {
     search: params.get("q") ?? "",
     materials: params.get("material")?.split(",").filter(Boolean) ?? [],
     products: params.get("product")?.split(",").filter(Boolean) ?? [],
-    colorFamilies: (params.get("color")?.split(",").filter(Boolean) ?? []).filter(
-      (c): c is ColorFamily => COLOR_FAMILIES.includes(c as ColorFamily),
+    colorFamilies: (
+      params.get("color")?.split(",").filter(Boolean) ?? []
+    ).filter((c): c is ColorFamily =>
+      COLOR_FAMILIES.includes(c as ColorFamily),
     ),
     ownership,
   };
@@ -609,7 +610,13 @@ export function applyFilamentFilters(
   for (const row of rows) {
     const e = row.entry;
     if (q) {
-      const hay = [e.color_name, e.product, e.material, e.sku, ...row.variantIds]
+      const hay = [
+        e.color_name,
+        e.product,
+        e.material,
+        e.sku,
+        ...row.variantIds,
+      ]
         .filter((v): v is string => !!v)
         .join(" ")
         .toLowerCase();

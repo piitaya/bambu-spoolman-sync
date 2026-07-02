@@ -25,54 +25,54 @@ export function SpoolGrid({ groups, onOpen }: Props) {
           )}
           <div style={{ padding: "var(--mantine-spacing-md)" }}>
             <ResponsiveCardGrid>
-            {group.rows.map((spool) => {
-              const bandBackground =
-                swatchBackground(spoolHexes(spool)) ??
-                "var(--mantine-color-gray-2)";
-              return (
-                <Card
-                  key={spool.tag_id}
-                  withBorder
-                  radius="md"
-                  padding="xs"
-                  h="100%"
-                  onClick={() => onOpen(spool.tag_id)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <Card.Section>
-                    <div style={{ height: 64, background: bandBackground }} />
-                  </Card.Section>
-                  <Stack gap={4} mt="sm">
-                    <Text size="sm" fw={500} lineClamp={1}>
-                      {spool.color_name ?? "—"}
-                    </Text>
-                    <Text size="xs" c="dimmed" lineClamp={1}>
-                      {spool.product ?? "—"}
-                    </Text>
-                    <Group
-                      justify="space-between"
-                      align="center"
-                      mt={4}
-                      wrap="nowrap"
-                    >
-                      <Badge size="xs" variant="light">
-                        {spool.material ?? "—"}
-                      </Badge>
-                      <Text size="xs" c="dimmed">
-                        {formatGrams(remainingGrams(spool))}
+              {group.rows.map((spool) => {
+                const bandBackground =
+                  swatchBackground(spoolHexes(spool)) ??
+                  "var(--mantine-color-gray-2)";
+                return (
+                  <Card
+                    key={spool.tag_id}
+                    withBorder
+                    radius="md"
+                    padding="xs"
+                    h="100%"
+                    onClick={() => onOpen(spool.tag_id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <Card.Section>
+                      <div style={{ height: 64, background: bandBackground }} />
+                    </Card.Section>
+                    <Stack gap={4} mt="sm">
+                      <Text size="sm" fw={500} lineClamp={1}>
+                        {spool.color_name ?? "—"}
                       </Text>
-                    </Group>
-                    {spool.remain != null ? (
-                      <Progress
-                        value={spool.remain}
-                        size="sm"
-                        color={spoolFillColor(spool.remain)}
-                      />
-                    ) : null}
-                  </Stack>
-                </Card>
-              );
-            })}
+                      <Text size="xs" c="dimmed" lineClamp={1}>
+                        {spool.product ?? "—"}
+                      </Text>
+                      <Group
+                        justify="space-between"
+                        align="center"
+                        mt={4}
+                        wrap="nowrap"
+                      >
+                        <Badge size="xs" variant="light">
+                          {spool.material ?? "—"}
+                        </Badge>
+                        <Text size="xs" c="dimmed">
+                          {formatGrams(remainingGrams(spool))}
+                        </Text>
+                      </Group>
+                      {spool.remain != null ? (
+                        <Progress
+                          value={spool.remain}
+                          size="sm"
+                          color={spoolFillColor(spool.remain)}
+                        />
+                      ) : null}
+                    </Stack>
+                  </Card>
+                );
+              })}
             </ResponsiveCardGrid>
           </div>
         </section>

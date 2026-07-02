@@ -18,7 +18,12 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useConfig, useRemovePrinter, useReorderPrinters, useUpdatePrinter } from "../hooks";
+import {
+  useConfig,
+  useRemovePrinter,
+  useReorderPrinters,
+  useUpdatePrinter,
+} from "../hooks";
 import type { PrinterConfig } from "../api";
 import { SortablePrinterCard } from "../components/SortablePrinterCard";
 import { SortablePrinterRow } from "../components/SortablePrinterRow";
@@ -51,12 +56,15 @@ export default function PrintersPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   // Local mirror of printer order for smooth DnD animation
-  const remotePrinters = data?.printers ?? [];
-  const [orderedPrinters, setOrderedPrinters] = useState<PrinterConfig[]>(remotePrinters);
+  const remotePrinters = useMemo(() => data?.printers ?? [], [data]);
+  const [orderedPrinters, setOrderedPrinters] =
+    useState<PrinterConfig[]>(remotePrinters);
   const remoteKey = useMemo(
     () => remotePrinters.map((p) => p.serial).join("|"),
     [remotePrinters],
@@ -70,12 +78,16 @@ export default function PrintersPage() {
       }
       return remotePrinters;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remoteKey, remotePrinters]);
 
-  
-  const openNew = () => { setEditing(null); open(); };
-  const openEdit = (p: PrinterConfig) => { setEditing(p); open(); };
+  const openNew = () => {
+    setEditing(null);
+    open();
+  };
+  const openEdit = (p: PrinterConfig) => {
+    setEditing(p);
+    open();
+  };
   const toggleEnabled = (p: PrinterConfig, enabled: boolean) => {
     update.mutate({ serial: p.serial, patch: { enabled } });
   };
@@ -111,8 +123,15 @@ export default function PrintersPage() {
       {orderedPrinters.length === 0 ? (
         <Text c="dimmed">{t("printers.none")}</Text>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <SortableContext items={orderedPrinters.map((p) => p.serial)} strategy={verticalListSortingStrategy}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={onDragEnd}
+        >
+          <SortableContext
+            items={orderedPrinters.map((p) => p.serial)}
+            strategy={verticalListSortingStrategy}
+          >
             {isMobile ? (
               <Stack gap="sm">
                 {orderedPrinters.map((p) => (

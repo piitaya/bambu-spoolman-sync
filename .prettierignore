@@ -1,0 +1,5 @@
+**/dist
+backend/drizzle
+frontend/dev-dist
+frontend/public
+package-lock.json

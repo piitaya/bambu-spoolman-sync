@@ -35,7 +35,11 @@ export function notFound(reply: FastifyReply, message: string) {
   return errorBody(message, ErrorCode.NotFound);
 }
 
-export function conflict(reply: FastifyReply, message: string, code: ErrorCodeValue) {
+export function conflict(
+  reply: FastifyReply,
+  message: string,
+  code: ErrorCodeValue,
+) {
   reply.code(409);
   return errorBody(message, code);
 }
@@ -69,25 +73,33 @@ export const SpoolScanSchema = Type.Object({
   weight: Type.Number(),
   temp_min: Type.Number(),
   temp_max: Type.Number(),
-  color_hexes: Type.Optional(Type.Union([Type.Array(Type.String()), Type.Null()])),
+  color_hexes: Type.Optional(
+    Type.Union([Type.Array(Type.String()), Type.Null()]),
+  ),
   remain: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
 });
 export type SpoolScan = Static<typeof SpoolScanSchema>;
 
-export function parseSpoolScan(data: unknown): { success: true; data: SpoolScan } | { success: false; error: string } {
+export function parseSpoolScan(
+  data: unknown,
+): { success: true; data: SpoolScan } | { success: false; error: string } {
   const coerced = Value.Default(SpoolScanSchema, data);
   if (Value.Check(SpoolScanSchema, coerced)) {
     return { success: true, data: coerced };
   }
   const errors = [...Value.Errors(SpoolScanSchema, coerced)];
-  const message = errors.map((e) => e.path ? `${e.path}: ${e.message}` : e.message).join("; ");
+  const message = errors
+    .map((e) => (e.path ? `${e.path}: ${e.message}` : e.message))
+    .join("; ");
   return { success: false, error: message };
 }
 
 export const SpoolHistoryEventPatchSchema = Type.Object({
   remain: Type.Union([Type.Integer({ minimum: 0, maximum: 100 }), Type.Null()]),
 });
-export type SpoolHistoryEventPatch = Static<typeof SpoolHistoryEventPatchSchema>;
+export type SpoolHistoryEventPatch = Static<
+  typeof SpoolHistoryEventPatchSchema
+>;
 
 export const SpoolHistoryEventTypeEnum = Type.Union([
   Type.Literal("ams_load"),
@@ -143,4 +155,3 @@ export const LocalSpoolResponse = Type.Object({
   first_seen: Type.String(),
   last_updated: Type.String(),
 });
-

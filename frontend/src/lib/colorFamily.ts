@@ -46,7 +46,9 @@ export const FAMILY_HEX: Record<ColorFamily, string> = {
   black: "#212121",
 };
 
-export function colorFamily(hex: string | null | undefined): ColorFamily | null {
+export function colorFamily(
+  hex: string | null | undefined,
+): ColorFamily | null {
   const rgb = parseHex(hex);
   if (!rgb) return null;
   const { h, s, l } = rgbToHsl(rgb);
@@ -77,7 +79,9 @@ export function colorFamily(hex: string | null | undefined): ColorFamily | null 
   return "pink";
 }
 
-function parseHex(hex: string | null | undefined): { r: number; g: number; b: number } | null {
+function parseHex(
+  hex: string | null | undefined,
+): { r: number; g: number; b: number } | null {
   if (!hex) return null;
   const clean = hex.replace(/^#/, "").trim();
   if (clean.length !== 6 && clean.length !== 8) return null;
@@ -86,7 +90,11 @@ function parseHex(hex: string | null | undefined): { r: number; g: number; b: nu
   return { r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff };
 }
 
-function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }): { h: number; s: number; l: number } {
+function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }): {
+  h: number;
+  s: number;
+  l: number;
+} {
   const rn = r / 255;
   const gn = g / 255;
   const bn = b / 255;

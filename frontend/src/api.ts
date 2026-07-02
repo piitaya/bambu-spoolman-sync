@@ -17,7 +17,6 @@ export type {
   CatalogEntry,
 } from "@pandaroo/shared";
 
-
 import type {
   CatalogEntry,
   Config,
@@ -76,24 +75,27 @@ export const api = {
   putConfig: (config: Config) =>
     req<Config>("/api/config", {
       method: "PUT",
-      body: JSON.stringify(config)
+      body: JSON.stringify(config),
     }),
   createPrinter: (input: PrinterConfig) =>
     req<PrinterConfig>("/api/printers", {
       method: "POST",
-      body: JSON.stringify(input)
+      body: JSON.stringify(input),
     }),
   updatePrinter: (serial: string, patch: PrinterPatch) =>
     req<PrinterConfig>(`/api/printers/${encodeURIComponent(serial)}`, {
       method: "PATCH",
-      body: JSON.stringify(patch)
+      body: JSON.stringify(patch),
     }),
   removePrinter: (serial: string) =>
     req<{ ok: true }>(`/api/printers/${encodeURIComponent(serial)}`, {
-      method: "DELETE"
+      method: "DELETE",
     }),
   getPrinters: () => req<Printer[]>("/api/printer-statuses"),
-  getFilamentCatalog: () => req<{ count: number; fetched_at: string | null }>("/api/filament-catalog/status"),
+  getFilamentCatalog: () =>
+    req<{ count: number; fetched_at: string | null }>(
+      "/api/filament-catalog/status",
+    ),
   listFilamentCatalog: () => req<CatalogEntry[]>("/api/filament-catalog"),
   refreshFilamentCatalog: () =>
     req<{ count: number }>("/api/filament-catalog/refresh", { method: "POST" }),
@@ -102,7 +104,12 @@ export const api = {
     req<Spool>(`/api/spools/${encodeURIComponent(tagId)}`),
   getSpoolHistory: (
     tagId: string,
-    params: { from?: string; to?: string; before?: string; limit?: number } = {},
+    params: {
+      from?: string;
+      to?: string;
+      before?: string;
+      limit?: number;
+    } = {},
   ) => {
     const search = new URLSearchParams();
     if (params.from) search.set("from", params.from);
@@ -123,14 +130,17 @@ export const api = {
     req<void>(`/api/spools/${encodeURIComponent(tagId)}`, {
       method: "DELETE",
     }),
-  patchHistoryEvent: (tagId: string, eventId: number, data: { remain: number | null }) =>
+  patchHistoryEvent: (
+    tagId: string,
+    eventId: number,
+    data: { remain: number | null },
+  ) =>
     req<import("@pandaroo/shared").SpoolHistoryEvent>(
       `/api/spools/${encodeURIComponent(tagId)}/history/${eventId}`,
       { method: "PATCH", body: JSON.stringify(data) },
     ),
   deleteHistoryEvent: (tagId: string, eventId: number) =>
-    req<void>(
-      `/api/spools/${encodeURIComponent(tagId)}/history/${eventId}`,
-      { method: "DELETE" },
-    ),
+    req<void>(`/api/spools/${encodeURIComponent(tagId)}/history/${eventId}`, {
+      method: "DELETE",
+    }),
 };
