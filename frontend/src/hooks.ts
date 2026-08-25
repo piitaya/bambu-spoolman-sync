@@ -45,37 +45,77 @@ const queryKeys = {
 // mismatches where the first event could slip under `gte`.
 const HISTORY_FROM_ANCHOR = "1970-01-01T00:00:00.000Z";
 
+const SSE_RETRY_BASE_MS = 1_000;
+const SSE_RETRY_MAX_MS = 30_000;
+
 export function useEventStream() {
   const qc = useQueryClient();
   useEffect(() => {
-    const source = new EventSource("/api/events");
-    // On (re)connect, re-sync the live-data queries to cover anything missed
-    // while the stream was down. Scoped to avoid nuking unrelated caches.
-    source.addEventListener("connected", () => {
-      qc.invalidateQueries({ queryKey: queryKeys.printers });
-      qc.invalidateQueries({ queryKey: queryKeys.spools });
-      qc.invalidateQueries({ queryKey: queryKeys.spoolHistory.all });
-      qc.invalidateQueries({ queryKey: queryKeys.config });
-    });
-    source.addEventListener("printers-changed", () => {
-      qc.invalidateQueries({ queryKey: queryKeys.printers });
-    });
-    source.addEventListener("spools-changed", (e) => {
-      qc.invalidateQueries({ queryKey: queryKeys.spools });
-      try {
-        const { tag_id } = JSON.parse((e as MessageEvent).data);
-        if (tag_id) {
-          qc.invalidateQueries({
-            queryKey: queryKeys.spoolHistory.byTag(tag_id),
-          });
-        }
-      } catch {}
-    });
-    source.addEventListener("config-changed", () => {
-      qc.invalidateQueries({ queryKey: queryKeys.config });
-      qc.invalidateQueries({ queryKey: queryKeys.printers });
-    });
-    return () => source.close();
+    let source: EventSource | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    let stopped = false;
+
+    const scheduleReconnect = () => {
+      if (stopped) return;
+      const delay = Math.min(
+        SSE_RETRY_BASE_MS * 2 ** attempts,
+        SSE_RETRY_MAX_MS,
+      );
+      attempts += 1;
+      retryTimer = setTimeout(connect, delay);
+    };
+
+    function connect() {
+      if (stopped) return;
+      const es = new EventSource("/api/events");
+      source = es;
+
+      // On (re)connect, re-sync the live-data queries to cover anything missed
+      // while the stream was down. Scoped to avoid nuking unrelated caches.
+      es.addEventListener("connected", () => {
+        attempts = 0;
+        qc.invalidateQueries({ queryKey: queryKeys.printers });
+        qc.invalidateQueries({ queryKey: queryKeys.spools });
+        qc.invalidateQueries({ queryKey: queryKeys.spoolHistory.all });
+        qc.invalidateQueries({ queryKey: queryKeys.config });
+      });
+      es.addEventListener("printers-changed", () => {
+        qc.invalidateQueries({ queryKey: queryKeys.printers });
+      });
+      es.addEventListener("spools-changed", (e) => {
+        qc.invalidateQueries({ queryKey: queryKeys.spools });
+        try {
+          const { tag_id } = JSON.parse((e as MessageEvent).data);
+          if (tag_id) {
+            qc.invalidateQueries({
+              queryKey: queryKeys.spoolHistory.byTag(tag_id),
+            });
+          }
+        } catch {}
+      });
+      es.addEventListener("config-changed", () => {
+        qc.invalidateQueries({ queryKey: queryKeys.config });
+        qc.invalidateQueries({ queryKey: queryKeys.printers });
+      });
+      es.addEventListener("error", () => {
+        // CLOSED means the browser gave up for good, which it does on any
+        // answer that is not a 200 text/event-stream. Reconnect ourselves.
+        if (es.readyState !== EventSource.CLOSED) return;
+        es.close();
+        if (source === es) source = null;
+        scheduleReconnect();
+      });
+    }
+
+    connect();
+
+    return () => {
+      stopped = true;
+      clearTimeout(retryTimer);
+      source?.close();
+      source = null;
+    };
   }, [qc]);
 }
 
