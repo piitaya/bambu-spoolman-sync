@@ -11,6 +11,7 @@ import {
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { CATALOG_REPO } from "@pandaroo/shared";
+import { CopyableMono } from "../components/CopyableMono";
 import { useFilamentCatalog, useRefreshMapping } from "../hooks";
 import {
   DEFAULT_LANGUAGE,
@@ -28,6 +29,8 @@ export default function SettingsPage() {
   const fetchedAt = catalog?.fetched_at
     ? new Date(catalog.fetched_at).toLocaleString()
     : t("settings.mapping_card.never");
+
+  const mcpUrl = `${window.location.origin}/mcp`;
 
   const languageOptions = useMemo(
     () =>
@@ -110,6 +113,24 @@ export default function SettingsPage() {
               {t("settings.mapping_card.refresh_now")}
             </Button>
           </Group>
+        </Stack>
+      </Card>
+
+      <Card withBorder padding="lg" radius="md">
+        <Stack gap="md">
+          <Title order={4}>{t("settings.mcp_card.title")}</Title>
+          <Text size="sm" c="dimmed">
+            {t("settings.mcp_card.hint")}
+          </Text>
+          <Stack gap={4}>
+            <Text size="sm" fw={500}>
+              {t("settings.mcp_card.endpoint")}
+            </Text>
+            <CopyableMono value={mcpUrl} />
+          </Stack>
+          <Text size="xs" c="dimmed">
+            {t("settings.mcp_card.security_hint")}
+          </Text>
         </Stack>
       </Card>
     </Stack>

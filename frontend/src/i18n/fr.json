@@ -194,6 +194,12 @@
       "theme_auto": "Automatique (système)",
       "theme_light": "Clair",
       "theme_dark": "Sombre"
+    },
+    "mcp_card": {
+      "title": "Serveur MCP",
+      "hint": "Donne aux assistants IA et autres clients MCP un accès en lecture à vos bobines, au contenu des AMS et au catalogue de filaments. Rien ne peut être modifié par ce biais.",
+      "endpoint": "Endpoint",
+      "security_hint": "Pas d'authentification, comme le reste de Pandaroo : gardez-le sur votre réseau local, ou n'exposez que /mcp derrière un reverse proxy authentifié."
     }
   },
   "spool_detail": {

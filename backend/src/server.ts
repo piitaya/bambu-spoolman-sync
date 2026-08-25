@@ -19,6 +19,8 @@ import { printerStatusRoutes } from "./routes/printer-status.routes.js";
 import { filamentCatalogRoutes } from "./routes/filament-catalog.routes.js";
 import { spoolRoutes } from "./routes/spool.routes.js";
 import { eventsRoutes } from "./routes/events.routes.js";
+import { mcpRoutes } from "./routes/mcp.routes.js";
+import { listPrinterStatuses } from "./services/printer-status.js";
 
 const MAPPING_SOURCE_URL = `https://raw.githubusercontent.com/${CATALOG_REPO}/main/filaments.json`;
 
@@ -83,12 +85,19 @@ export async function buildApp() {
     spoolService: services.spoolService,
     spoolHistoryService: services.spoolHistoryService,
   });
-  await app.register(printerStatusRoutes, {
+  const printerStatusDeps = {
     configStore: services.configStore,
     mapping: services.mapping,
     printerPool: services.printerPool,
-  });
+  };
+  await app.register(printerStatusRoutes, printerStatusDeps);
   await app.register(eventsRoutes, { bus: services.bus });
+  await app.register(mcpRoutes, {
+    spoolService: services.spoolService,
+    spoolHistoryService: services.spoolHistoryService,
+    mapping: services.mapping,
+    listPrinters: () => listPrinterStatuses(printerStatusDeps),
+  });
 
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const frontendDist = resolve(__dirname, "../../frontend/dist");

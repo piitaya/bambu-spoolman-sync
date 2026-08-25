@@ -194,6 +194,12 @@
       "theme_auto": "Auto (match system)",
       "theme_light": "Light",
       "theme_dark": "Dark"
+    },
+    "mcp_card": {
+      "title": "MCP server",
+      "hint": "Gives AI assistants and other MCP clients read access to your spools, AMS contents, and the filament catalog. Nothing can be changed through it.",
+      "endpoint": "Endpoint",
+      "security_hint": "No authentication, same as the rest of Pandaroo: keep it on your LAN, or expose only /mcp through an authenticated reverse proxy."
     }
   },
   "spool_detail": {
