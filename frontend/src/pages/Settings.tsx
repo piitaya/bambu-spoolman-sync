@@ -119,6 +119,9 @@ export default function SettingsPage() {
       <Card withBorder padding="lg" radius="md">
         <Stack gap="md">
           <Title order={4}>{t("settings.mcp_card.title")}</Title>
+          <Text size="sm" c="dimmed">
+            {t("settings.mcp_card.hint")}
+          </Text>
           <Stack gap={4}>
             <Text size="sm" fw={500}>
               {t("settings.mcp_card.endpoint")}
