@@ -43,12 +43,35 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Thrown when a reverse proxy turned the request away instead of letting it
+ * reach Pandaroo. Pandaroo has no auth of its own, so a 401/403 or a redirect
+ * to a login page means the session in front of it is gone.
+ */
+export class AuthRequiredError extends ApiError {
+  constructor(status: number, message = "Authentication required") {
+    super(status, message, "auth_required");
+    this.name = "AuthRequiredError";
+  }
+}
+
+export const isAuthRequiredError = (err: unknown): err is AuthRequiredError =>
+  err instanceof AuthRequiredError;
+
 async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers ?? {});
   if (init.body != null && !headers.has("content-type")) {
     headers.set("content-type", "application/json");
   }
-  const res = await fetch(path, { ...init, headers });
+  // `redirect: "manual"` keeps the browser from chasing a login redirect
+  // cross-origin, where CORS turns it into an opaque "Failed to fetch".
+  const res = await fetch(path, { ...init, headers, redirect: "manual" });
+  if (isLoginRedirect(res)) {
+    throw new AuthRequiredError(res.status || 302);
+  }
+  if (res.status === 401 || res.status === 403) {
+    throw new AuthRequiredError(res.status);
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     // Backend errors are `{ error: "…", code?: "…" }`. Preserve both so callers
@@ -67,7 +90,20 @@ async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError(res.status, message, code);
   }
   if (res.status === 204) return undefined as T;
+  // Every endpoint answers JSON, so HTML means a proxy answered instead.
+  if (res.headers.get("content-type")?.includes("text/html")) {
+    throw new AuthRequiredError(res.status);
+  }
   return res.json() as Promise<T>;
+}
+
+// `redirect: "manual"` turns a same-origin 3xx into an opaque response with
+// status 0; the status check covers runtimes that pass the redirect through.
+function isLoginRedirect(res: Response): boolean {
+  return (
+    res.type === "opaqueredirect" ||
+    (res.status >= 300 && res.status < 400 && res.status !== 304)
+  );
 }
 
 export const api = {

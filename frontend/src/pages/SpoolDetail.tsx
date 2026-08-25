@@ -27,6 +27,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useIsMobile } from "../lib/breakpoints";
 import { AdjustRemainModal } from "../components/AdjustRemainModal";
 import { ConfirmModal } from "../components/ConfirmModal";
+import { EmptyStateCard } from "../components/EmptyStateCard";
 import { CopyableMono } from "../components/CopyableMono";
 import { SpoolIllustration } from "../components/SpoolIllustration";
 import { formatAmsLocation } from "../components/formatAmsLocation";
@@ -41,6 +42,7 @@ import {
   useSpoolLocation,
   useSpoolMap,
   useSpoolReportsRemain,
+  useSpools,
 } from "../hooks";
 import { SpoolUsageHistory } from "../components/SpoolUsageHistory";
 import type { Spool } from "../api";
@@ -52,6 +54,13 @@ export default function SpoolDetailPage() {
   const matchStatus = useMatchStatus();
   const isMobile = useIsMobile();
 
+  // Same query as `useSpoolMap`, taken raw so a pending or failed load is
+  // told apart from "no such spool" instead of all three rendering a spinner.
+  const {
+    isPending: spoolsPending,
+    isError: spoolsFailed,
+    error: spoolsError,
+  } = useSpools();
   const spoolMap = useSpoolMap();
   const spool: Spool | undefined = tagId ? spoolMap.get(tagId) : undefined;
   const location = useSpoolLocation(tagId ?? "");
@@ -73,7 +82,17 @@ export default function SpoolDetailPage() {
       <PageShell>
         <Stack gap="lg">
           <BackLink />
-          <Loader />
+          {spoolsFailed ? (
+            <Alert color="red" title={t("spools.failed_to_load")}>
+              {spoolsError instanceof Error
+                ? spoolsError.message
+                : String(spoolsError)}
+            </Alert>
+          ) : spoolsPending ? (
+            <Loader />
+          ) : (
+            <EmptyStateCard description={t("spool_detail.not_found")} />
+          )}
         </Stack>
       </PageShell>
     );

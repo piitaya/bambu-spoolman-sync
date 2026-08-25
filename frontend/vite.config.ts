@@ -27,8 +27,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,ico,png,woff2}"],
-        navigateFallbackDenylist: [/^\/api\//],
+        // Assets only, and no navigation fallback: answering navigations from
+        // a cached index.html would hide the redirect an authenticating proxy
+        // issues once its session expires, leaving a shell that can never
+        // load data. Pandaroo is useless without its backend anyway.
+        globPatterns: ["**/*.{js,css,svg,ico,png,woff2}"],
+        navigateFallback: undefined,
       },
     }),
   ],
