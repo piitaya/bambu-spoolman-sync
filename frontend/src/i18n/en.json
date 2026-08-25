@@ -204,6 +204,7 @@
   },
   "spool_detail": {
     "back": "Back",
+    "not_found": "This spool is no longer in the inventory.",
     "location": {
       "not_loaded": "Not currently loaded"
     },

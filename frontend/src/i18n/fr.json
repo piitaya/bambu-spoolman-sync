@@ -204,6 +204,7 @@
   },
   "spool_detail": {
     "back": "Retour",
+    "not_found": "Cette bobine n'est plus dans l'inventaire.",
     "location": {
       "not_loaded": "Pas dans un AMS"
     },

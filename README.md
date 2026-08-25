@@ -132,6 +132,27 @@ Tools:
 
 Nothing is writable through MCP and printer access codes are never returned. The endpoint has no authentication, same as the REST API: keep it on your LAN, or expose only `/mcp` through a reverse proxy that checks a token or a secret path.
 
+## Behind an authenticating reverse proxy
+
+Pandaroo has no login of its own, so remote access means putting an
+auth layer in front of it. Nothing to configure on either side, but two
+things are worth knowing:
+
+- The service worker precaches assets only, never `index.html`, so
+  every page load reaches the proxy and its redirect to a login page
+  works. If your proxy adds caching of its own, leave HTML documents
+  out of it.
+- Once the session expires, a `401`, a `403` or a redirect on `/api/*`
+  makes the app reload itself so the proxy can send you to its login
+  page — a background request can't follow a login redirect, a page load
+  can. It reloads at most once a minute, so a proxy that serves the page
+  but forbids `/api` shows an error instead of looping.
+
+Server-Sent Events on `/api/events` need buffering off and a generous
+read timeout (for nginx, `proxy_buffering off;` and
+`proxy_read_timeout 1h;`). The stream heartbeats every 20 s and the
+frontend reconnects with backoff if it drops.
+
 ## Privacy and security
 
 - Outbound connections: your printers on the LAN, and GitHub (once
