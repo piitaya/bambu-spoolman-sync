@@ -21,6 +21,7 @@ move it between slots or printers.
   manual adjustments.
 - Manual remaining-weight adjustment when the AMS isn't reporting one.
 - English and French.
+- MCP server, so AI assistants and other MCP clients can answer "what's left in PLA black?" and "what should I reorder?" from your real stock.
 
 ## Why RFID
 
@@ -99,6 +100,37 @@ For production: `npm run build && npm start`.
    _Settings → Network → LAN-only mode_.
 2. Load a spool in the AMS. Pandaroo picks up the RFID reading and
    starts tracking it.
+
+## MCP server
+
+Pandaroo exposes a read-only [MCP](https://modelcontextprotocol.io) endpoint at `/mcp` (Streamable HTTP, stateless) on the same port as the web UI. Settings > General shows the URL for your install. Any client that speaks Streamable HTTP works:
+
+```bash
+# Claude Code
+claude mcp add --transport http pandaroo http://localhost:4000/mcp
+```
+
+```json
+// Cursor (.cursor/mcp.json) and other JSON-configured clients
+{ "mcpServers": { "pandaroo": { "url": "http://localhost:4000/mcp" } } }
+```
+
+```toml
+# Codex (~/.codex/config.toml)
+[mcp_servers.pandaroo]
+url = "http://localhost:4000/mcp"
+```
+
+Tools:
+
+| Tool             | What it returns                                                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `list_spools`    | Every tracked spool with remaining filament (percent and grams) and its AMS slot, filterable by material, color, or printer |
+| `get_spool`      | One spool by tag id, with its recent history                                                                                |
+| `get_ams_state`  | Live contents of every AMS slot, including empty and unidentified ones                                                      |
+| `search_catalog` | The Bambu filament catalog, to find the exact product and SKU to buy                                                        |
+
+Nothing is writable through MCP and printer access codes are never returned. The endpoint has no authentication, same as the REST API: keep it on your LAN, or expose only `/mcp` through a reverse proxy that checks a token or a secret path.
 
 ## Privacy and security
 
