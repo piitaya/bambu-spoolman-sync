@@ -32,6 +32,12 @@ export default tseslint.config(
     },
   },
   {
+    files: ["frontend/scripts/**/*.mjs"],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
     files: ["**/*.cjs"],
     languageOptions: {
       sourceType: "commonjs",
